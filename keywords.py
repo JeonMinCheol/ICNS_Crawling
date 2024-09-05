@@ -25,8 +25,8 @@ DEPANDENT_FAVOR_KEYWORD = [
     re.compile("Case dismiss", re.I), re.compile("Exoneration", re.I), re.compile("Reasonable Doubt", re.I), re.compile("Mistrial", re.I), 
     re.compile("No breach found", re.I), re.compile("judgement for the defendant", re.I), re.compile("Dismissal of claim", re.I), 
     re.compile("No damages award", re.I), re.compile("Counterclaim successful", re.I), re.compile("Defendants are entitled", re.I),
-    re.compile("Plaintiff has not proven", re.I), re.compile("Plaintiff lacks ", re.I), re.compile("ORDERED that Plaintiff", re.I),
-    re.compile("Plaintiff is ORDERED", re.I), re.compile("Plaintiff shall pay ", re.I),re.compile("Plaintiff pay to the Defendant", re.I), 
+    re.compile("Plaintiff has not proven", re.I), re.compile("Plaintiff lacks", re.I), re.compile("ORDERED that Plaintiff", re.I),
+    re.compile("Plaintiff is ORDERED", re.I), re.compile("Plaintiff shall pay", re.I),re.compile("Plaintiff pay to the Defendant", re.I), 
 ]
 
 # 변호사 검색용 키워드

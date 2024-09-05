@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-start = 1
+START_PAGE = 1
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -20,6 +20,68 @@ nle_model = model.NLE()
 date_formattor = DateFormattor()
 #question_answerer = pipeline('question-answering', device='cuda')
 
+def findCaseIdQuery(CURSOR, table, case_name, docket_no):
+    CASE_ID_QUERY = f"SELECT _id FROM {table} WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
+    CURSOR.execute(CASE_ID_QUERY)
+    CASE_ID = CURSOR.fetchone()[0]
+    return CASE_ID
+
+def insertQuery(CURSOR, table, name):
+    LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
+    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO {table}(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {0}, {0}, {0}, {0})'
+    
+    # LAWYER INFORMATION 추가 부분
+    if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
+        CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
+        print(LAWYER_INFORMATION_INSERT_QUERY)
+
+def insertQuery2(CURSOR, CASE_ID, table, win, lose, draw):
+    LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
+    CURSOR.execute(LAWYER_NO_QUERY)
+    LAWYER_NO = CURSOR.fetchone()[0]
+    print(f"LAYWER_NO : {LAWYER_NO}")
+    
+    LAWYER_INSERT_QUERY = f'INSERT INTO {table}(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{win}", "{lose}", "{draw}")'
+    CURSOR.execute(LAWYER_INSERT_QUERY)
+
+def updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw):
+    if lawyer_type == "plaintiff":
+        # CASE: WIN
+        if plaintiff_win > defendant_win:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+        
+        # CASE: LOSE
+        elif plaintiff_win < defendant_win:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+        
+        # CASE: DRAW
+        else:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+            
+    elif lawyer_type == "defendant":
+        if plaintiff_win > defendant_win:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+        
+        # CASE: LOSE
+        elif plaintiff_win < defendant_win:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+        
+        # CASE: DRAW
+        else:
+            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
+            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
+            print(LAWYER_INFORMATION_UPDATE_QUERY)
+        
 def postProcess(arr):
     for i in range(len(arr)):
         for k in keywords.REMOVE_KEYWORD + keywords.LAW_FIRMS + keywords.LOC:
@@ -27,6 +89,8 @@ def postProcess(arr):
             
             if arr[i] == "":
                 arr.remove("")
+                
+    arr = list(set(arr))
     
 def classify(x, person, profession):
     pa , da = [], []
@@ -64,6 +128,48 @@ def returnCount(h1):
     before = h1.find(" Search")
     return int(h1[:before])
 
+def keywordIndexing(keyword_type, keyword,  sentence, index, line_index):
+    for x in keyword:
+        for k in x.finditer(sentence):
+            for l in line_index:
+                if l[0] <= k.start() and k.end() <= l[1]:
+                    inp = index.get(str(l), [0, 0, ""])
+                    if inp[2].find(x.pattern) == -1:
+                        index[str(l)] = [
+                            inp[0] + 1 * int(keyword_type == "plaintiff"), 
+                            inp[1] + 1 * int(keyword_type == "defendant"),
+                            inp[2] + x.pattern + ", "
+                        ]
+
+def findPlaintiffAndDefendant(response):
+    plaintiff = response.select("div.co_title > div")[0].getText()
+    defendant = "Null"
+    
+    if len(response.select("div.co_title > div")) > 2:
+        defendant = response.select("div.co_title > div")[2].getText()
+        
+    if plaintiff.lower().find("plaintiff") != -1:
+        plaintiff = plaintiff[:plaintiff.lower().find("plaintiff") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+    elif plaintiff.lower().find("petitioner") != -1:
+        plaintiff = plaintiff[:plaintiff.lower().find("petitioner") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+    else:
+        plaintiff = plaintiff.replace(",", "").replace("*", "").replace("1 ", "")
+    
+    if defendant.lower().find("defendant") != -1:
+        defendant = defendant[:defendant.lower().find("defendant") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+    elif defendant.lower().find("respondent") != -1:
+        defendant = defendant[:defendant.lower().find("respondent") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+    else:
+        defendant = defendant.replace(",", "").replace("*", "").replace("1 ", "")
+        
+    return plaintiff, defendant    
+
+def predictLawyer(nle_model, attorney_list, lawyer):
+    for attorney in attorney_list:
+        lawyer.extend(nle_model.predict(attorney, ["lawyer"]))
+    
+    lawyer = list(set(lawyer))  
+      
 # keyword 검색
 while(t_date != END_POINT):
     url = search_builder.add_param("t_date", t_date).build()
@@ -73,7 +179,7 @@ while(t_date != END_POINT):
     count = returnCount(search_response.select_one("#co_twoColumnContent > h1").get_text())
     page = math.floor(count/20)
 
-    for i in range(start, page + 1):
+    for i in range(START_PAGE, page + 1):
         # link 추출
         t1 = time.time()
         link_url = search_builder.add_param("Page", i).build()
@@ -90,10 +196,11 @@ while(t_date != END_POINT):
             # 링크 접속
             judges, p_lawyer, d_lawyer, plaintiff, defendant, law_firm = [ None for _ in range(6) ]
             p_attorney, d_attorney, decision_paragraph, line_index, decision_keywords, lawyer, attorney_list = [ [] for _ in range(7) ]
-            plaintiff_win, plaintiff_loss, defendant_win, defendant_loss, draw = [ 0 for _ in range(5) ]
+            plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw = [ 0 for _ in range(5) ]
+            full_decision_sentence, profession = "", ""
             selected_paragraph_index = dict()
-            full_decision_sentence = ""
             pa, da= False, False 
+            labels = ["lawyer"]
             
             case_name, link = case.string.replace("\'", "`"), "https://govt.westlaw.com" + str(case['href'])
             response = request.get(link)
@@ -109,37 +216,13 @@ while(t_date != END_POINT):
                     print("Skip, 사유 : 재심")
                     continue
                 
+                plaintiff, defendant = findPlaintiffAndDefendant(response)
                 docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
                 date = date_formattor.formatting(response.select_one("#filedate").string)
-                t_date = date.replace("-", "/")
-                
-                plaintiff = response.select("div.co_title > div")[0].getText()
-                defendant = "Null"
-                
-                if len(response.select("div.co_title > div")) > 2:
-                    defendant = response.select("div.co_title > div")[2].getText()
-                    
                 attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
                 paragraph_block = response.select("div.co_paragraphText")
-                profession = ""
-                labels = ["lawyer"]
+                t_date = date.replace("-", "/")
                 
-                if plaintiff.lower().find("plaintiff") != -1:
-                    plaintiff = plaintiff[:plaintiff.lower().find("plaintiff") - 1].replace(",", "").replace("*", "").replace("1 ", "")
-                elif plaintiff.lower().find("petitioner") != -1:
-                    plaintiff = plaintiff[:plaintiff.lower().find("petitioner") - 1].replace(",", "").replace("*", "").replace("1 ", "")
-                else:
-                    plaintiff = plaintiff.replace(",", "").replace("*", "").replace("1", "")
-                    continue
-                
-                if defendant.lower().find("defendant") != -1:
-                    defendant = defendant[:defendant.lower().find("defendant") - 1].replace(",", "").replace("*", "").replace("1 ", "")
-                elif defendant.lower().find("respondent") != -1:
-                    defendant = defendant[:defendant.lower().find("respondent") - 1].replace(",", "").replace("*", "").replace("1 ", "")
-                else:
-                    defendant = defendant.replace(",", "").replace("*", "").replace("1", "")
-                    continue
-
                 for attorney in attorney_block:
                     profession += attorney.getText() + " "
                     for ic, atto in enumerate(keywords.ATTORNEY_KEYWORD):
@@ -160,10 +243,7 @@ while(t_date != END_POINT):
                     print("skip, labels len is 1")
                     continue
                 
-                for attorney in attorney_list:
-                    lawyer.extend(nle_model.predict(attorney, ["lawyer"]))
-                
-                lawyer = list(set(lawyer))
+                predictLawyer(nle_model, attorney_list, lawyer)
                     
                 print(link)
                 print(labels)
@@ -193,10 +273,7 @@ while(t_date != END_POINT):
                     else:
                         d_attorney.append("Unknown")
                         
-                    
                 postProcess(p_attorney); postProcess(d_attorney)
-                p_attorney = list(set(p_attorney))
-                d_attorney = list(set(d_attorney))
                 
                 for x in paragraph_block:
                     decision_paragraph.append(x.getText())
@@ -207,29 +284,8 @@ while(t_date != END_POINT):
                     full_decision_sentence += str(d)
                     line_end += len(str(d))
                     
-                for x in keywords.PLAINTIFF_FAVOR_KEYWORD:
-                    for k in x.finditer(full_decision_sentence):
-                        for l in line_index:
-                            if l[0] <= k.start() and k.end() <= l[1]:
-                                inp = selected_paragraph_index.get(str(l), [0, 0, ""])
-                                if inp[2].find(x.pattern) == -1:
-                                    selected_paragraph_index[str(l)] = [
-                                        inp[0] + 1, 
-                                        inp[1],
-                                        inp[2] + x.pattern + ", "
-                                    ]
-                
-                for x in keywords.DEPANDENT_FAVOR_KEYWORD:
-                    for k in x.finditer(full_decision_sentence):
-                        for l in line_index:
-                            if l[0] <= k.start() and k.end() <= l[1]:
-                                inp = selected_paragraph_index.get(str(l), [0, 0, ""])
-                                if inp[2].find(x.pattern) == -1:
-                                    selected_paragraph_index[str(l)] = [
-                                        inp[0], 
-                                        inp[1] + 1,
-                                        inp[2] + x.pattern + ", "
-                                    ]
+                keywordIndexing("plaintiff", keywords.PLAINTIFF_FAVOR_KEYWORD, full_decision_sentence, selected_paragraph_index, line_index)
+                keywordIndexing("defendant", keywords.DEPANDENT_FAVOR_KEYWORD, full_decision_sentence, selected_paragraph_index, line_index)
                 
                 # keyword 미 발견 시 continue
                 if len(selected_paragraph_index.keys()) == 0:
@@ -247,13 +303,13 @@ while(t_date != END_POINT):
                         winner = "Plaintiff"
                         loser = "Defendant"
                         plaintiff_win += 1
-                        defendant_loss += 1
+                        defendant_lose += 1
                         
                     elif x[0] < x[1]:
                         winner = "Defendant"
                         loser = "Plaintiff"
                         defendant_win += 1
-                        plaintiff_loss += 1
+                        plaintiff_lose += 1
                         
                     else:
                         winner = "Draw"
@@ -265,7 +321,6 @@ while(t_date != END_POINT):
                 # DATABASE SQL
                 TEST_CASE_SELECT_QUERY = f"SELECT * FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
                 TEST_CASE_INSERT_QUERY = f'INSERT INTO TEST_CASE(CASE_NAME, COURT_NAME, INDEX_NO, PLAINTIFF, DEFENDANT, DECISION_DATE, URL) VALUES("{case_name}", "{court}", "{docket_no}", "{plaintiff}", "{defendant}", "{date}", "{link}")'
-                CASE_ID_QUERY = f"SELECT _id FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
                 
                 # TEST CASE 추가 부분
                 if CURSOR.execute(TEST_CASE_SELECT_QUERY) == 0:
@@ -276,115 +331,30 @@ while(t_date != END_POINT):
                     continue
                 
                 # CASE_ID 불러오기
-                CURSOR.execute(CASE_ID_QUERY)
-                CASE_ID = CURSOR.fetchone()[0]
+                CASE_ID = findCaseIdQuery(CURSOR, "TEST_CASE", case_name, docket_no)
                 print(f"CASE_ID : {CASE_ID}")
                 
                 for name in p_attorney:
-                    LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {1}, {0}, {0}, {0})'
+                    table = "LAWYER_INFORMATION"
+                    lawyer_type = "plaintiff"
                     
-                    # LAWYER INFORMATION 추가 부분
-                    if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
-                        CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
-                        print(LAWYER_INFORMATION_INSERT_QUERY)
-                        
-                        if plaintiff_win > defendant_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif plaintiff_win < defendant_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
+                    insertQuery(CURSOR, table, name)
+                    updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
-                    # LAWYER INFORMATION 이미 존재        
-                    else:
-                        CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY)
-                        
-                        row = []
-                        for r in CURSOR.fetchone():
-                            row.append(r)
-                        
-                        if plaintiff_win > defendant_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif plaintiff_win < defendant_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                            
                     # PLAINTIFF LAWYER 추가 부분
-                    LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    CURSOR.execute(LAWYER_NO_QUERY)
-                    LAWYER_NO = CURSOR.fetchone()[0]
-                    print(f"LAYWER_NO : {LAWYER_NO}")
-                    
-                    PLAINTIFF_LAWYER_INSERT_QUERY = f'INSERT INTO PLAINTIFF_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{plaintiff_win}", "{plaintiff_loss}", "{draw}")'
-                    CURSOR.execute(PLAINTIFF_LAWYER_INSERT_QUERY)
+                    insertQuery2(CURSOR, CASE_ID, lawyer_type + "_lawyer", plaintiff_win, plaintiff_lose, draw)
                     
                     CONN.commit()
                 
                 for name in d_attorney:
-                    LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {1}, {0}, {0}, {0})'
+                    table = "LAWYER_INFORMATION"
+                    lawyer_type = "defendant"
                     
-                    # LAWYER INFORMATION 추가 부분
-                    if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
-                        CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
-                        print(LAWYER_INFORMATION_INSERT_QUERY)
-                        
-                        if defendant_win > plaintiff_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif defendant_win < plaintiff_win:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                            
-                    # 이미 존재
-                    else:
-                        CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY)
-                        
-                        row = []
-                        for r in CURSOR.fetchone():
-                            row.append(r)
-                            
-                        if defendant_win > defendant_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif defendant_win < defendant_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_WIN = CASE_WIN + 1, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-                            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
-                            print(LAWYER_INFORMATION_UPDATE_QUERY)
+                    insertQuery(CURSOR, table, name)
+                    updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
-                    # DeFENDaNT LAWYER 추가 부분
-                    LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    CURSOR.execute(LAWYER_NO_QUERY)
-                    LAWYER_NO = CURSOR.fetchone()[0]
-                    print(f"LAYWER_NO : {LAWYER_NO}")
-                    
-                    DeFENDaNT_LAWYER_INSERT_QUERY = f'INSERT INTO DEFENDANT_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{defendant_win}", "{defendant_loss}", "{draw}")'
-                    CURSOR.execute(DeFENDaNT_LAWYER_INSERT_QUERY)
+                    # DEFENDANT LAWYER 추가 부분
+                    insertQuery2(CURSOR, CASE_ID, lawyer_type + "_lawyer", defendant_win, defendant_lose, draw)
                     
                     CONN.commit()
                 
@@ -408,3 +378,5 @@ while(t_date != END_POINT):
 
     print(f"Total Time : {total_time}")
     CONN.close()
+    
+    
