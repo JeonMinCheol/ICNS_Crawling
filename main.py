@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-
+start = 1
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -42,17 +42,17 @@ def classify(x, person, profession):
                     print(profession[x[i]: x[i+1]], p)
     return pa, da
 
-def print_case_information(page, i, index, link, plaintiff, defendent, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser):
+def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser):
     print("============================================")
     print(f"current page > {i}/{page}, index > {20 * (int(i) - 1) + index}")
     print(f"Case Name> {case_name}")
     print(f"Court Name > {court}")
     print(f"Index no > {docket_no}")
     print(f"plaintiff > {plaintiff}")
-    print(f"Defendent > {defendent}")
+    print(f"Defendant > {defendant}")
     print(f"profession > {profession}")
     print(f"plaintiff's Counsel > {p_attorney}")
-    print(f"Defendent's Counsel > {d_attorney}")
+    print(f"Defendant's Counsel > {d_attorney}")
     print(f"Decision Date > {date}")
     print(f"Decision Key words > {x[2]}")
     print(f"Win > {winner}")
@@ -73,7 +73,7 @@ while(t_date != END_POINT):
     count = returnCount(search_response.select_one("#co_twoColumnContent > h1").get_text())
     page = math.floor(count/20)
 
-    for i in range(1, page + 1):
+    for i in range(start, page + 1):
         # link 추출
         t1 = time.time()
         link_url = search_builder.add_param("Page", i).build()
@@ -88,14 +88,14 @@ while(t_date != END_POINT):
         
         for index, case in enumerate(links):
             # 링크 접속
-            judges, p_lawyer, d_lawyer, plaintiff, defendent, law_firm = [ None for _ in range(6) ]
+            judges, p_lawyer, d_lawyer, plaintiff, defendant, law_firm = [ None for _ in range(6) ]
             p_attorney, d_attorney, decision_paragraph, line_index, decision_keywords, lawyer, attorney_list = [ [] for _ in range(7) ]
-            plaintiff_win, plaintiff_loss, defendant_win, defendant_loss = [ 0 for _ in range(4) ]
+            plaintiff_win, plaintiff_loss, defendant_win, defendant_loss, draw = [ 0 for _ in range(5) ]
             selected_paragraph_index = dict()
             full_decision_sentence = ""
             pa, da= False, False 
             
-            case_name, link = case.string, "https://govt.westlaw.com" + str(case['href'])
+            case_name, link = case.string.replace("\'", "`"), "https://govt.westlaw.com" + str(case['href'])
             response = request.get(link)
             
             if response == None:
@@ -245,12 +245,12 @@ while(t_date != END_POINT):
 
                     if x[0] > x[1]:
                         winner = "Plaintiff"
-                        loser = "Defendent"
+                        loser = "Defendant"
                         plaintiff_win += 1
                         defendant_loss += 1
                         
                     elif x[0] < x[1]:
-                        winner = "Defendent"
+                        winner = "Defendant"
                         loser = "Plaintiff"
                         defendant_win += 1
                         plaintiff_loss += 1
@@ -258,16 +258,13 @@ while(t_date != END_POINT):
                     else:
                         winner = "Draw"
                         loser = "Draw"
-                        plaintiff_win += 1
-                        defendant_win += 1
-                        plaintiff_loss += 1
-                        defendant_loss += 1
+                        draw += 1
                 
-                    print_case_information(page, i, index, link, plaintiff, defendent, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser)
+                    print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser)
                 
                 # DATABASE SQL
                 TEST_CASE_SELECT_QUERY = f"SELECT * FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
-                TEST_CASE_INSERT_QUERY = f'INSERT INTO TEST_CASE(CASE_NAME, COURT_NAME, INDEX_NO, PLAINTIFF, DEFENDANT, DECISION_DATE, URL) VALUES("{case_name}", "{court}", "{docket_no}", "{plaintiff}", "{defendent}", "{date}", "{link}")'
+                TEST_CASE_INSERT_QUERY = f'INSERT INTO TEST_CASE(CASE_NAME, COURT_NAME, INDEX_NO, PLAINTIFF, DEFENDANT, DECISION_DATE, URL) VALUES("{case_name}", "{court}", "{docket_no}", "{plaintiff}", "{defendant}", "{date}", "{link}")'
                 CASE_ID_QUERY = f"SELECT _id FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
                 
                 # TEST CASE 추가 부분
@@ -285,23 +282,23 @@ while(t_date != END_POINT):
                 
                 for name in p_attorney:
                     LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, COUNT, CASE_WIN, CASE_LOSE) VALUES("{name}", "{0}", "{0}", {1}, {0}, {0})'
+                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {1}, {0}, {0}, {0})'
                     
                     # LAWYER INFORMATION 추가 부분
                     if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
                         CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
                         print(LAWYER_INFORMATION_INSERT_QUERY)
                         
-                        if plaintiff_win > plaintiff_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
+                        if plaintiff_win > defendant_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif plaintiff_win < plaintiff_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                        elif plaintiff_win < defendant_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                         else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_WIN = CASE_WIN + 1, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                     
@@ -313,16 +310,16 @@ while(t_date != END_POINT):
                         for r in CURSOR.fetchone():
                             row.append(r)
                         
-                        if plaintiff_win > plaintiff_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
+                        if plaintiff_win > defendant_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif plaintiff_win < plaintiff_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                        elif plaintiff_win < defendant_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                         else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, CASE_WIN = CASE_WIN + 1, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                             
@@ -332,30 +329,30 @@ while(t_date != END_POINT):
                     LAWYER_NO = CURSOR.fetchone()[0]
                     print(f"LAYWER_NO : {LAWYER_NO}")
                     
-                    PLAINTIFF_LAWYER_INSERT_QUERY = f'INSERT INTO PLAINTIFF_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{plaintiff_win}", "{plaintiff_loss}")'
+                    PLAINTIFF_LAWYER_INSERT_QUERY = f'INSERT INTO PLAINTIFF_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{plaintiff_win}", "{plaintiff_loss}", "{draw}")'
                     CURSOR.execute(PLAINTIFF_LAWYER_INSERT_QUERY)
                     
                     CONN.commit()
                 
                 for name in d_attorney:
                     LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, COUNT, CASE_WIN, CASE_LOSE) VALUES("{name}", "{0}", "{0}", {1}, {0}, {0})'
+                    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO LAWYER_INFORMATION(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {1}, {0}, {0}, {0})'
                     
                     # LAWYER INFORMATION 추가 부분
                     if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
                         CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
                         print(LAWYER_INFORMATION_INSERT_QUERY)
                         
-                        if defendant_win > defendant_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
+                        if defendant_win > plaintiff_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
-                        elif defendant_win < defendant_loss:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                        elif defendant_win < plaintiff_win:
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                         else:
-                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, CASE_WIN = CASE_WIN + 1, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
+                            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE LAWYER_INFORMATION SET WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_loss}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                             
@@ -380,14 +377,14 @@ while(t_date != END_POINT):
                             CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY) 
                             print(LAWYER_INFORMATION_UPDATE_QUERY)
                     
-                    # DEFENDENT LAWYER 추가 부분
+                    # DeFENDaNT LAWYER 추가 부분
                     LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
                     CURSOR.execute(LAWYER_NO_QUERY)
                     LAWYER_NO = CURSOR.fetchone()[0]
                     print(f"LAYWER_NO : {LAWYER_NO}")
                     
-                    DEFENDENT_LAWYER_INSERT_QUERY = f'INSERT INTO DEFENDANT_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{defendant_win}", "{defendant_loss}")'
-                    CURSOR.execute(DEFENDENT_LAWYER_INSERT_QUERY)
+                    DeFENDaNT_LAWYER_INSERT_QUERY = f'INSERT INTO DEFENDANT_LAWYER(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{defendant_win}", "{defendant_loss}", "{draw}")'
+                    CURSOR.execute(DeFENDaNT_LAWYER_INSERT_QUERY)
                     
                     CONN.commit()
                 
