@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 1
+START_PAGE = 41
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -103,12 +103,54 @@ def findPlaintiffAndDefendant(response):
         
     return plaintiff, defendant    
 
+def findElement(response):
+    court = response.select_one("div.co_contentBlock.co_courtBlock > div").string
+    plaintiff, defendant = findPlaintiffAndDefendant(response)
+    docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
+    date = date_formattor.formatting(response.select_one("#filedate").string)
+    attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
+    paragraph_block = response.select("div.co_paragraphText")
+    t_date = date.replace("-", "/")
+    
+    return court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date
+
 def predictLawyer(nle_model, attorney_list, lawyer):
     for attorney in attorney_list:
         lawyer.extend(nle_model.predict(attorney, ["lawyer"]))
     
     lawyer = list(set(lawyer))  
-      
+
+def lawyerClassification(profession, lawyer, pa, da):
+    x = []
+    if profession.find(":") != -1:
+        for c in keywords.AFTER_ATTORNEY_COMPILE:
+            for iter in c.finditer(profession):
+                x.append(iter.start())
+    x.append(-1)
+
+    if len(x) > 1:
+        p_attorney, d_attorney = classify(x, lawyer, profession)
+    else:
+        x = [0]
+        for c in keywords.BEFORE_ATTORNEY_COMPILE:
+            for iter in c.finditer(profession):
+                x.append(iter.end())
+            
+        if len(x) > 1:
+            x.append(-1)
+            p_attorney, d_attorney = classify(x, lawyer, profession)
+
+    if (pa and len(p_attorney) == 0) or (da and len(d_attorney) == 0):
+        if (pa and len(p_attorney) == 0):
+            p_attorney.append("Unknown")
+        else:
+            d_attorney.append("Unknown")
+    
+    postProcess(p_attorney)
+    postProcess(d_attorney)
+    
+    return p_attorney, d_attorney
+
 # keyword 검색
 while(t_date != END_POINT):
     url = search_builder.add_param("t_date", t_date).build()
@@ -149,18 +191,11 @@ while(t_date != END_POINT):
                 continue
 
             try:
-                court = response.select_one("div.co_contentBlock.co_courtBlock > div").string
+                court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date = findElement(response)
                 
                 if court.lower().find("appellate") != -1 or court.lower().find("first") != -1 or court.lower().find("second") != -1 or court.lower().find("third") != -1:
                     print("Skip, 사유 : 재심")
                     continue
-                
-                plaintiff, defendant = findPlaintiffAndDefendant(response)
-                docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
-                date = date_formattor.formatting(response.select_one("#filedate").string)
-                attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
-                paragraph_block = response.select("div.co_paragraphText")
-                t_date = date.replace("-", "/")
                 
                 for attorney in attorney_block:
                     profession += attorney.getText() + " "
@@ -187,32 +222,7 @@ while(t_date != END_POINT):
                 print(link)
                 print(labels)
                 
-                x = []
-                if profession.find(":") != -1:
-                    for c in keywords.AFTER_ATTORNEY_COMPILE:
-                        for iter in c.finditer(profession):
-                            x.append(iter.start())
-                x.append(-1)
-            
-                if len(x) > 1:
-                    p_attorney, d_attorney = classify(x, lawyer, profession)
-                else:
-                    x = [0]
-                    for c in keywords.BEFORE_ATTORNEY_COMPILE:
-                        for iter in c.finditer(profession):
-                            x.append(iter.end())
-                        
-                    if len(x) > 1:
-                        x.append(-1)
-                        p_attorney, d_attorney = classify(x, lawyer, profession)
-                
-                if (pa and len(p_attorney) == 0) or (da and len(d_attorney) == 0):
-                    if (pa and len(p_attorney) == 0):
-                        p_attorney.append("Unknown")
-                    else:
-                        d_attorney.append("Unknown")
-                        
-                postProcess(p_attorney); postProcess(d_attorney)
+                p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
                 
                 for x in paragraph_block:
                     decision_paragraph.append(x.getText())
@@ -315,6 +325,9 @@ while(t_date != END_POINT):
         print("===========================================")
 
     print(f"Total Time : {total_time}")
-    CONN.close()
+    
+    if START_PAGE > 1:
+        START_PAGE = 1
+CONN.close()
     
     
