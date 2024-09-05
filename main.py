@@ -1,7 +1,7 @@
 import pymysql
 from bypass import *
 import keywords
-from URLBuilder import URLBuilder
+from Builder import URLBuilder, QueryBuilder
 import math
 import model
 import traceback
@@ -18,70 +18,9 @@ search_builder = URLBuilder()
 request = Request()
 nle_model = model.NLE()
 date_formattor = DateFormattor()
+query_builder = QueryBuilder(CURSOR)
 #question_answerer = pipeline('question-answering', device='cuda')
 
-def findCaseIdQuery(CURSOR, table, case_name, docket_no):
-    CASE_ID_QUERY = f"SELECT _id FROM {table} WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
-    CURSOR.execute(CASE_ID_QUERY)
-    CASE_ID = CURSOR.fetchone()[0]
-    return CASE_ID
-
-def insertQuery(CURSOR, table, name):
-    LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-    LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO {table}(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {0}, {0}, {0}, {0})'
-    
-    # LAWYER INFORMATION 추가 부분
-    if CURSOR.execute(LAWYER_INFORMATION_SELECT_QUERY) == 0:
-        CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
-        print(LAWYER_INFORMATION_INSERT_QUERY)
-
-def insertQuery2(CURSOR, CASE_ID, table, win, lose, draw):
-    LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
-    CURSOR.execute(LAWYER_NO_QUERY)
-    LAWYER_NO = CURSOR.fetchone()[0]
-    print(f"LAYWER_NO : {LAWYER_NO}")
-    
-    LAWYER_INSERT_QUERY = f'INSERT INTO {table}(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{win}", "{lose}", "{draw}")'
-    CURSOR.execute(LAWYER_INSERT_QUERY)
-
-def updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw):
-    if lawyer_type == "plaintiff":
-        # CASE: WIN
-        if plaintiff_win > defendant_win:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-        
-        # CASE: LOSE
-        elif plaintiff_win < defendant_win:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-        
-        # CASE: DRAW
-        else:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-            
-    elif lawyer_type == "defendant":
-        if plaintiff_win > defendant_win:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-        
-        # CASE: LOSE
-        elif plaintiff_win < defendant_win:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-        
-        # CASE: DRAW
-        else:
-            LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
-            CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
-            print(LAWYER_INFORMATION_UPDATE_QUERY)
-        
 def postProcess(arr):
     for i in range(len(arr)):
         for k in keywords.REMOVE_KEYWORD + keywords.LAW_FIRMS + keywords.LOC:
@@ -331,18 +270,18 @@ while(t_date != END_POINT):
                     continue
                 
                 # CASE_ID 불러오기
-                CASE_ID = findCaseIdQuery(CURSOR, "TEST_CASE", case_name, docket_no)
+                CASE_ID = query_builder.findCaseIdQuery("TEST_CASE", case_name, docket_no)
                 print(f"CASE_ID : {CASE_ID}")
                 
                 for name in p_attorney:
                     table = "LAWYER_INFORMATION"
                     lawyer_type = "plaintiff"
                     
-                    insertQuery(CURSOR, table, name)
-                    updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
+                    query_builder.insertQuery(table, name)
+                    query_builder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
                     # PLAINTIFF LAWYER 추가 부분
-                    insertQuery2(CURSOR, CASE_ID, lawyer_type + "_lawyer", plaintiff_win, plaintiff_lose, draw)
+                    query_builder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, plaintiff_win, plaintiff_lose, draw)
                     
                     CONN.commit()
                 
@@ -350,18 +289,17 @@ while(t_date != END_POINT):
                     table = "LAWYER_INFORMATION"
                     lawyer_type = "defendant"
                     
-                    insertQuery(CURSOR, table, name)
-                    updateQuery(CURSOR, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
+                    query_builder.insertQuery(table, name)
+                    query_builder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
                     # DEFENDANT LAWYER 추가 부분
-                    insertQuery2(CURSOR, CASE_ID, lawyer_type + "_lawyer", defendant_win, defendant_lose, draw)
+                    query_builder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, defendant_win, defendant_lose, draw)
                     
                     CONN.commit()
                 
                 #  Decision Keyword 추가 부분
                 for keyword in decision_keywords:
-                    DECISION_KEYWORD_INSERT_QUERY = f'INSERT INTO DECISION_KEYWORD(CASE_ID, KEYWORD, PARAGRAPH) VALUES("{CASE_ID}", "{keyword[1]}", "{keyword[0]}")'
-                    CURSOR.execute(DECISION_KEYWORD_INSERT_QUERY)
+                    query_builder.insertDecisonKeyword(CASE_ID, keyword)
                     
                 CONN.commit()
 
