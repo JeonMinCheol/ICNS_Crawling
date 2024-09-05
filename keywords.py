@@ -13,7 +13,7 @@ PLAINTIFF_FAVOR_KEYWORD = [
     re.compile("Conviction", re.I), re.compile("Sentence", re.I), re.compile("Verdict for the prosecution", re.I), re.compile("Plea bargain", re.I), 
     re.compile("Beyond a reasonable doubt", re.I),re.compile("Breach of Contract", re.I), re.compile("Breach of fiduciary duty", re.I), 
     re.compile("Specific Performance", re.I), re.compile("Compensatory damage", re.I), re.compile("Punitive damage", re.I), re.compile("Remedy", re.I),
-    re.compile("Defendant is ORDERED", re.I), re.compile("ORDERED that Defendant", re.I), re.compile("Defendant shall pay ", re.I),
+    re.compile("Defendant is ORDERED", re.I), re.compile("ORDERED that Defendant", re.I), re.compile("Defendant shall pay", re.I),
     re.compile("Defendant pay to the Plaintiff", re.I), 
 ]   
 

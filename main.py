@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 41
+START_PAGE = 113
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -30,6 +30,7 @@ def postProcess(arr):
                 arr.remove("")
                 
     arr = list(set(arr))
+    return arr
     
 def classify(x, person, profession):
     pa , da = [], []
@@ -43,7 +44,7 @@ def classify(x, person, profession):
                 elif profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[2]) != -1 or profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[3]) != -1:
                     da.append(p)
                     print(profession[x[i]: x[i+1]], p)
-    return pa, da
+    return list(set(pa)), list(set(da))
 
 def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser):
     print("============================================")
@@ -121,7 +122,8 @@ def predictLawyer(nle_model, attorney_list, lawyer):
     lawyer = list(set(lawyer))  
 
 def lawyerClassification(profession, lawyer, pa, da):
-    x = []
+    p_attorney, d_attorney, x = [], [], []
+    
     if profession.find(":") != -1:
         for c in keywords.AFTER_ATTORNEY_COMPILE:
             for iter in c.finditer(profession):
@@ -146,8 +148,8 @@ def lawyerClassification(profession, lawyer, pa, da):
         else:
             d_attorney.append("Unknown")
     
-    postProcess(p_attorney)
-    postProcess(d_attorney)
+    p_attorney = postProcess(p_attorney)
+    d_attorney = postProcess(d_attorney)
     
     return p_attorney, d_attorney
 
@@ -165,7 +167,7 @@ while(t_date != END_POINT):
         t1 = time.time()
         link_url = search_builder.add_param("Page", i).build()
         link_response = request.get(link_url)
-        links = link_response.select("#results > li > a[href]")
+        links = link_response.select("a.resultLink[href]")
         docket_no = link_response.select("tr > td:nth-child(3)")
         t2 = time.time()
         
@@ -174,23 +176,23 @@ while(t_date != END_POINT):
         total_time += t2 - t1
         
         for index, case in enumerate(links):
-            # 링크 접속
-            judges, p_lawyer, d_lawyer, plaintiff, defendant, law_firm = [ None for _ in range(6) ]
-            p_attorney, d_attorney, decision_paragraph, line_index, decision_keywords, lawyer, attorney_list = [ [] for _ in range(7) ]
-            plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw = [ 0 for _ in range(5) ]
-            full_decision_sentence, profession = "", ""
-            selected_paragraph_index = dict()
-            pa, da= False, False 
-            labels = ["lawyer"]
-            
-            case_name, link = case.string.replace("\'", "`"), "https://govt.westlaw.com" + str(case['href'])
-            response = request.get(link)
-            
-            if response == None:
-                print("response == None")
-                continue
-
             try:
+                # 링크 접속
+                judges, p_lawyer, d_lawyer, plaintiff, defendant, law_firm = [ None for _ in range(6) ]
+                p_attorney, d_attorney, decision_paragraph, line_index, decision_keywords, lawyer, attorney_list = [ [] for _ in range(7) ]
+                plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw = [ 0 for _ in range(5) ]
+                full_decision_sentence, profession = "", ""
+                selected_paragraph_index = dict()
+                pa, da= False, False 
+                labels = ["lawyer"]
+                
+                case_name, link = case.string.replace("\'", "`"), "https://govt.westlaw.com" + str(case['href'])
+                response = request.get(link)
+                
+                if response == None:
+                    print("response == None")
+                    continue
+
                 court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date = findElement(response)
                 
                 if court.lower().find("appellate") != -1 or court.lower().find("first") != -1 or court.lower().find("second") != -1 or court.lower().find("third") != -1:
@@ -328,6 +330,7 @@ while(t_date != END_POINT):
     
     if START_PAGE > 1:
         START_PAGE = 1
+        
 CONN.close()
     
     
