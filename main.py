@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 370
+START_PAGE = 373
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -29,8 +29,7 @@ def postProcess(arr):
             if arr[i] == "":
                 arr.remove("")
                 
-    arr = list(set(arr))
-    return arr
+    return list(set(arr))
     
 def classify(x, person, profession):
     pa , da = [], []
@@ -107,11 +106,11 @@ def findElement(response):
     court = response.select_one("div.co_contentBlock.co_courtBlock > div").string
     date = date_formattor.formatting(response.select_one("#filedate").string)
     plaintiff, defendant = findPlaintiffAndDefendant(response)
+    t_date = date.replace("-", "/")
     docket_no = "null"
-    attorney_block = []
-    paragraph_block = []
+    attorney_block, paragraph_block = [], []
     try:
-        response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
+        docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
     except:
         pass
     try:
@@ -122,7 +121,6 @@ def findElement(response):
         paragraph_block = response.select("div.co_paragraphText")
     except:
         pass
-    t_date = date.replace("-", "/")
     
     return court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date
 
@@ -130,7 +128,7 @@ def predictLawyer(nle_model, attorney_list, lawyer):
     for attorney in attorney_list:
         lawyer.extend(nle_model.predict(attorney, ["lawyer"]))
     
-    lawyer = list(set(lawyer))  
+    return list(set(lawyer))  
 
 def lawyerClassification(profession, lawyer, pa, da):
     p_attorney, d_attorney, x = [], [], []
@@ -159,8 +157,11 @@ def lawyerClassification(profession, lawyer, pa, da):
         else:
             d_attorney.append("Unknown")
     
-    p_attorney = postProcess(p_attorney)
-    d_attorney = postProcess(d_attorney)
+    if len(p_attorney) > 0:
+        p_attorney = postProcess(p_attorney)
+    
+    if len(d_attorney) > 0:
+        d_attorney = postProcess(d_attorney)
     
     return p_attorney, d_attorney
 
@@ -230,11 +231,10 @@ while(t_date != END_POINT):
                     print("skip, labels len is 1")
                     continue
                 
-                predictLawyer(nle_model, attorney_list, lawyer)
-                    
                 print(link)
                 print(labels)
                 
+                lawyer = predictLawyer(nle_model, attorney_list, lawyer)
                 p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
                 
                 for x in paragraph_block:
