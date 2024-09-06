@@ -8,10 +8,10 @@ import traceback
 from formattor import DateFormattor, Tokenizer
 #from transformers import pipeline
 
+START_PAGE = 28
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 3
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()

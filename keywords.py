@@ -14,6 +14,7 @@ PLAINTIFF_FAVOR_KEYWORD = [
     re.compile("Beyond a reasonable doubt", re.I),re.compile("Breach of Contract", re.I), re.compile("Breach of fiduciary duty", re.I), 
     re.compile("Specific Performance", re.I), re.compile("Compensatory damage", re.I), re.compile("Punitive damage", re.I), re.compile("Remedy", re.I),
     re.compile("Defendant is ORDERED", re.I), re.compile("ORDERED that Defendant", re.I), re.compile("Defendant shall pay", re.I),
+    re.compile("Respondent is ORDERED", re.I), re.compile("ORDERED that Respondent", re.I), re.compile("Respondent shall pay", re.I),
 ]   
 
 DEPANDENT_FAVOR_KEYWORD = [
@@ -23,8 +24,10 @@ DEPANDENT_FAVOR_KEYWORD = [
     re.compile("Not Guilty", re.I), re.compile("Acquittal", re.I), re.compile("Verdict for the defendant", re.I), 
     re.compile("Exoneration", re.I), re.compile("Reasonable Doubt", re.I), re.compile("Mistrial", re.I), 
     re.compile("No breach found", re.I), re.compile("Dismissal of claim", re.I), re.compile("Plaintiff pay to the Defendant", re.I), 
-    re.compile("Counterclaim successful", re.I), re.compile("Defendants are entitled", re.I), re.compile("Plaintiff shall pay", re.I),
+    re.compile("Counterclaim successful", re.I), re.compile("Defendants are entitled", re.I), re.compile("Respondents are entitled", re.I), 
+    re.compile("Plaintiff shall pay", re.I), re.compile("Petitioner shall pay", re.I), re.compile("ORDERED that Petitioner", re.I),
     re.compile("Plaintiff has not proven", re.I), re.compile("Plaintiff lacks", re.I), re.compile("ORDERED that Plaintiff", re.I),
+    re.compile("Petitioner has not proven", re.I), re.compile("Petitioner lacks", re.I), 
 ]
 
 # 변호사 검색용 키워드
