@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 373
+START_PAGE = 3
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -26,10 +26,12 @@ def postProcess(arr):
         for k in keywords.REMOVE_KEYWORD + keywords.LAW_FIRMS + keywords.LOC:
             arr[i] = arr[i].replace(k, "")
             
-            if arr[i] == "":
-                arr.remove("")
-                
-    return list(set(arr))
+    arr = list(set(arr))
+    
+    if arr.count("") > 0:
+        arr.remove("")
+        
+    return arr
     
 def classify(x, person, profession):
     pa , da = [], []
@@ -43,6 +45,11 @@ def classify(x, person, profession):
                 elif profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[2]) != -1 or profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[3]) != -1:
                     da.append(p.replace("\'", "`"))
                     print(profession[x[i]: x[i+1]], p)
+                    
+        for t in pa + da:
+            if person.count(t.replace("`", "\'")) > 0:
+                person.remove(t.replace("`", "\'"))
+            
     return list(set(pa)), list(set(da))
 
 def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, winner, loser):
@@ -137,6 +144,8 @@ def lawyerClassification(profession, lawyer, pa, da):
         for c in keywords.AFTER_ATTORNEY_COMPILE:
             for iter in c.finditer(profession):
                 x.append(iter.start())
+        
+        x.sort()
         x.append(-1)
         
         if len(x) > 1:
@@ -146,7 +155,8 @@ def lawyerClassification(profession, lawyer, pa, da):
         for c in keywords.BEFORE_ATTORNEY_COMPILE:
             for iter in c.finditer(profession):
                 x.append(iter.end())
-            
+        
+        x.sort()
         if len(x) > 1:
             x.append(-1)
             p_attorney, d_attorney = classify(x, lawyer, profession)
@@ -231,8 +241,10 @@ while(t_date != END_POINT):
                     print("skip, labels len is 1")
                     continue
                 
+                print("============================================")
                 print(link)
                 print(labels)
+                print("============================================")
                 
                 lawyer = predictLawyer(nle_model, attorney_list, lawyer)
                 p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
