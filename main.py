@@ -11,7 +11,7 @@ from formattor import DateFormattor, Tokenizer
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
-START_PAGE = 113
+START_PAGE = 370
 total_time = 0
 t_date = "09/05/2024"
 search_builder = URLBuilder()
@@ -39,14 +39,14 @@ def classify(x, person, profession):
         for p in person:
             if profession[x[i]: x[i+1]].find(p) != -1:
                 if profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[0]) != -1 or profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[1]) != -1:
-                    pa.append(p)
+                    pa.append(p.replace("\'", "`"))
                     print(profession[x[i]: x[i+1]], p)
                 elif profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[2]) != -1 or profession[x[i]: x[i+1]].lower().find(keywords.ATTORNEY_KEYWORD[3]) != -1:
-                    da.append(p)
+                    da.append(p.replace("\'", "`"))
                     print(profession[x[i]: x[i+1]], p)
     return list(set(pa)), list(set(da))
 
-def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser):
+def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, winner, loser):
     print("============================================")
     print(f"current page > {i}/{page}, index > {20 * (int(i) - 1) + index}")
     print(f"Case Name> {case_name}")
@@ -58,7 +58,6 @@ def print_case_information(page, i, index, link, plaintiff, defendant, p_attorne
     print(f"plaintiff's Counsel > {p_attorney}")
     print(f"Defendant's Counsel > {d_attorney}")
     print(f"Decision Date > {date}")
-    print(f"Decision Key words > {x[2]}")
     print(f"Win > {winner}")
     print(f"Lose > {loser}")
     print(f"URL > {link}")
@@ -89,28 +88,40 @@ def findPlaintiffAndDefendant(response):
         defendant = response.select("div.co_title > div")[2].getText()
         
     if plaintiff.lower().find("plaintiff") != -1:
-        plaintiff = plaintiff[:plaintiff.lower().find("plaintiff") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+        plaintiff = plaintiff[:plaintiff.lower().find("plaintiff") - 1].replace(",", "").replace("*", "").replace("1 ", "").replace("\'", "`")
     elif plaintiff.lower().find("petitioner") != -1:
-        plaintiff = plaintiff[:plaintiff.lower().find("petitioner") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+        plaintiff = plaintiff[:plaintiff.lower().find("petitioner") - 1].replace(",", "").replace("*", "").replace("1 ", "").replace("\'", "`")
     else:
-        plaintiff = plaintiff.replace(",", "").replace("*", "").replace("1 ", "")
+        plaintiff = plaintiff.replace(",", "").replace("*", "").replace("1 ", "").replace("\'", "`")
     
     if defendant.lower().find("defendant") != -1:
-        defendant = defendant[:defendant.lower().find("defendant") - 1].replace(",", "").replace("*", "").replace("1 ", "")
+        defendant = defendant[:defendant.lower().find("defendant") - 1].replace(",", "").replace("*", "").replace("1 ", "").replace("\'", "`")
     elif defendant.lower().find("respondent") != -1:
         defendant = defendant[:defendant.lower().find("respondent") - 1].replace(",", "").replace("*", "").replace("1 ", "")
     else:
-        defendant = defendant.replace(",", "").replace("*", "").replace("1 ", "")
+        defendant = defendant.replace(",", "").replace("*", "").replace("1 ", "").replace("\'", "`")
         
     return plaintiff, defendant    
 
 def findElement(response):
     court = response.select_one("div.co_contentBlock.co_courtBlock > div").string
-    plaintiff, defendant = findPlaintiffAndDefendant(response)
-    docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
     date = date_formattor.formatting(response.select_one("#filedate").string)
-    attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
-    paragraph_block = response.select("div.co_paragraphText")
+    plaintiff, defendant = findPlaintiffAndDefendant(response)
+    docket_no = "null"
+    attorney_block = []
+    paragraph_block = []
+    try:
+        response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
+    except:
+        pass
+    try:
+        attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
+    except:
+        pass
+    try:
+        paragraph_block = response.select("div.co_paragraphText")
+    except:
+        pass
     t_date = date.replace("-", "/")
     
     return court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date
@@ -128,10 +139,10 @@ def lawyerClassification(profession, lawyer, pa, da):
         for c in keywords.AFTER_ATTORNEY_COMPILE:
             for iter in c.finditer(profession):
                 x.append(iter.start())
-    x.append(-1)
-
-    if len(x) > 1:
-        p_attorney, d_attorney = classify(x, lawyer, profession)
+        x.append(-1)
+        
+        if len(x) > 1:
+            p_attorney, d_attorney = classify(x, lawyer, profession)
     else:
         x = [0]
         for c in keywords.BEFORE_ATTORNEY_COMPILE:
@@ -245,7 +256,7 @@ while(t_date != END_POINT):
                 
                 # keyword에 따라 승패 결정
                 for key in selected_paragraph_index.keys():
-                    x = selected_paragraph_index[key]
+                    x = selected_paragraph_index[key] 
                     
                     decision_keywords.append([full_decision_sentence[int(key[1:key.find(",")]):int(key[key.find(",")+2:-1])].replace("\'", "").replace("\"", ""), x[2][:-2]])
                     winner, loser = "", ""
@@ -267,7 +278,7 @@ while(t_date != END_POINT):
                         loser = "Draw"
                         draw += 1
                 
-                    print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, x, winner, loser)
+                print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, winner, loser)
                 
                 # DATABASE SQL
                 TEST_CASE_SELECT_QUERY = f"SELECT * FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
