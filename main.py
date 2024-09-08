@@ -61,7 +61,7 @@ def classify(x, person, profession):
 
 def printCase(count, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, index_no, date, profession, lawyer, winner, loser):
     print("============================================")
-    print(f"current page > {i}/{count / 20}, count > {20 * (int(i) - 1) + index}")
+    print(f"current page > {i}/{int(count / 20)}, count > {20 * (int(i) - 1) + index}/{count}")
     print(f"Case Name> {case_name}")
     print(f"Court Name > {court}")
     print(f"Index no > {index_no}")
@@ -127,7 +127,7 @@ def findElement(response):
     try:
         index_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
     except:
-        pass
+        index_no = response.select_one("div.co_cites").string
     try:
         attorney_block = response.select("div.co_contentBlock.co_attorneyBlock > div")
     except:
