@@ -1,13 +1,13 @@
 from urllib.parse import urlencode
 # https://govt.westlaw.com/nyofficial/Search/Results?transitionType=Default&contextData=%28sc.Default%29&t_date=09%2F05%2F2024&t_p=LE&t_querytext=N.Y.Sup&Page=1&query=advanced%3A%20N.Y.Sup%20&Template=Decision
 
-
+# https://govt.westlaw.com/nyofficial/Search/Results?transitionType=Default&contextData=%28sc.Default%29&t_date=05%F05%2F2014&t_p=LE&t_querytext=N.Y.Sup&Page=1&query=advanced%3A%20N.Y.Sup%20&Template=Decision
 class URLBuilder:
     def __init__(self):
         self.scheme = "https"
         self.domain = "govt.westlaw.com"
         self.path = "nyofficial/Search/Results"
-        self.params = {"transitionType" : "Default", "contextData" : "(sc.Default)", "query": "advanced: N.Y.Sup ", "Template" : "Decision", "t_querytext" : "N.Y.Sup", "Page" : 1, "t_p" : "LE", "t_date" : "09/05/2024"}
+        self.params = {}
         self.port = None
 
     def set_scheme(self, scheme):

@@ -6,20 +6,27 @@ import math
 import model
 import traceback
 from formattor import DateFormattor, Tokenizer
+import datetime
 #from transformers import pipeline
 
-START_PAGE = 28
+START_PAGE = 1
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
 total_time = 0
-t_date = "09/05/2024"
-search_builder = URLBuilder()
+t_date = "09/07/2024"
 request = Request()
-nle_model = model.NLE()
-date_formattor = DateFormattor()
-query_builder = QueryBuilder(CURSOR)
+nleModel = model.NLE()
+urlBuilder = URLBuilder()
+dateFormattor = DateFormattor()
+queryBuilder = QueryBuilder(CURSOR)
 #question_answerer = pipeline('question-answering', device='cuda')
+
+def printLinkAndlabels(link, labels):
+    print("============================================")
+    print(link)
+    print(labels)
+    print("============================================")
 
 def postProcess(arr):
     for i in range(len(arr)):
@@ -52,12 +59,12 @@ def classify(x, person, profession):
             
     return list(set(pa)), list(set(da))
 
-def print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, winner, loser):
+def printCase(count, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, index_no, date, profession, lawyer, winner, loser):
     print("============================================")
-    print(f"current page > {i}/{page}, index > {20 * (int(i) - 1) + index}")
+    print(f"current page > {i}/{count}, count > {20 * (int(i) - 1) + index}")
     print(f"Case Name> {case_name}")
     print(f"Court Name > {court}")
-    print(f"Index no > {docket_no}")
+    print(f"Index no > {index_no}")
     print(f"plaintiff > {plaintiff}")
     print(f"Defendant > {defendant}")
     print(f"profession > {profession}")
@@ -71,7 +78,7 @@ def print_case_information(page, i, index, link, plaintiff, defendant, p_attorne
 
 def returnCount(h1):
     before = h1.find(" Search")
-    return int(h1[:before])
+    return math.floor(int(h1[:before]))
 
 def keywordIndexing(keyword_type, keyword,  sentence, index, line_index):
     for x in keyword:
@@ -111,13 +118,14 @@ def findPlaintiffAndDefendant(response):
 
 def findElement(response):
     court = response.select_one("div.co_contentBlock.co_courtBlock > div").string
-    date = date_formattor.formatting(response.select_one("#filedate").string)
+    date = dateFormattor.formatting(response.select_one("#filedate").string)
     plaintiff, defendant = findPlaintiffAndDefendant(response)
-    t_date = date.replace("-", "/")
-    docket_no = "null"
+    year, month, day = date.split('-')
+    t_date = f"{month}%2F{day}/{year}"
+    index_no = "null"
     attorney_block, paragraph_block = [], []
     try:
-        docket_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
+        index_no = response.select_one("div.co_contentBlock.co_docketBlock > div").string.replace("Index", "").replace(" ", "").replace("No.", "")
     except:
         pass
     try:
@@ -129,11 +137,11 @@ def findElement(response):
     except:
         pass
     
-    return court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date
+    return court, plaintiff, defendant, index_no, date, attorney_block, paragraph_block, t_date
 
-def predictLawyer(nle_model, attorney_list, lawyer):
+def predictLawyer(nleModel, attorney_list, lawyer):
     for attorney in attorney_list:
-        lawyer.extend(nle_model.predict(attorney, ["lawyer"]))
+        lawyer.extend(nleModel.predict(attorney, ["lawyer"]))
     
     return list(set(lawyer))  
 
@@ -175,22 +183,18 @@ def lawyerClassification(profession, lawyer, pa, da):
     
     return p_attorney, d_attorney
 
-# keyword 검색
 while(t_date != END_POINT):
-    url = search_builder.add_param("t_date", t_date).build()
+    url =  urlBuilder.add_param("transitionType", "Default").add_param("contextData", "(sc.Default)").add_param("query", "advanced: N.Y.Sup ").add_param("Template", "Decision").add_param("t_querytext", "N.Y.Sup. but not Appellate").add_param("t_p", "LE").add_param("t_date", t_date.replace("%2F", "/")).build()
+    response = request.get(url)
+    count = returnCount(response.select_one("#co_twoColumnContent > h1").get_text())
 
-    search_response = request.get(url)
-
-    count = returnCount(search_response.select_one("#co_twoColumnContent > h1").get_text())
-    page = math.floor(count/20)
-
-    for i in range(START_PAGE, page + 1):
+    for i in range(START_PAGE, START_PAGE + count):
         # link 추출
         t1 = time.time()
-        link_url = search_builder.add_param("Page", i).build()
-        link_response = request.get(link_url)
-        links = link_response.select("a.resultLink[href]")
-        docket_no = link_response.select("tr > td:nth-child(3)")
+        url = urlBuilder.add_param("Page", i).build()
+        response = request.get(url)
+        links = response.select("a.resultLink[href]")
+        index_no = response.select("tr > td:nth-child(3)")
         t2 = time.time()
         
         print(f"link count : {len(links)}, Spent time : {t2 - t1}")
@@ -215,7 +219,7 @@ while(t_date != END_POINT):
                     print("response == None")
                     continue
 
-                court, plaintiff, defendant, docket_no, date, attorney_block, paragraph_block, t_date = findElement(response)
+                court, plaintiff, defendant, index_no, date, attorney_block, paragraph_block, t_date = findElement(response)
                 
                 if court.lower().find("appellate") != -1 or court.lower().find("first") != -1 or court.lower().find("second") != -1 or court.lower().find("third") != -1:
                     print("Skip, 사유 : 재심")
@@ -241,12 +245,9 @@ while(t_date != END_POINT):
                     print("skip, labels len is 1")
                     continue
                 
-                print("============================================")
-                print(link)
-                print(labels)
-                print("============================================")
+                printLinkAndlabels(link, labels)
                 
-                lawyer = predictLawyer(nle_model, attorney_list, lawyer)
+                lawyer = predictLawyer(nleModel, attorney_list, lawyer)
                 p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
                 
                 for x in paragraph_block:
@@ -290,11 +291,11 @@ while(t_date != END_POINT):
                         loser = "Draw"
                         draw += 1
                 
-                print_case_information(page, i, index, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, docket_no, date, profession, lawyer, winner, loser)
+                printCase(count, i, index + 1, link, plaintiff, defendant, p_attorney, d_attorney, case_name, court, index_no, date, profession, lawyer, winner, loser)
                 
                 # DATABASE SQL
-                TEST_CASE_SELECT_QUERY = f"SELECT * FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
-                TEST_CASE_INSERT_QUERY = f'INSERT INTO TEST_CASE(CASE_NAME, COURT_NAME, INDEX_NO, PLAINTIFF, DEFENDANT, DECISION_DATE, URL) VALUES("{case_name}", "{court}", "{docket_no}", "{plaintiff}", "{defendant}", "{date}", "{link}")'
+                TEST_CASE_SELECT_QUERY = f"SELECT * FROM TEST_CASE WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{index_no}'"
+                TEST_CASE_INSERT_QUERY = f'INSERT INTO TEST_CASE(CASE_NAME, COURT_NAME, INDEX_NO, PLAINTIFF, DEFENDANT, DECISION_DATE, URL) VALUES("{case_name}", "{court}", "{index_no}", "{plaintiff}", "{defendant}", "{date}", "{link}")'
                 
                 # TEST CASE 추가 부분
                 if CURSOR.execute(TEST_CASE_SELECT_QUERY) == 0:
@@ -305,18 +306,18 @@ while(t_date != END_POINT):
                     continue
                 
                 # CASE_ID 불러오기
-                CASE_ID = query_builder.findCaseIdQuery("TEST_CASE", case_name, docket_no)
+                CASE_ID = queryBuilder.findCaseIdQuery("TEST_CASE", case_name, index_no)
                 print(f"CASE_ID : {CASE_ID}")
                 
                 for name in p_attorney:
                     table = "LAWYER_INFORMATION"
                     lawyer_type = "plaintiff"
                     
-                    query_builder.insertQuery(table, name)
-                    query_builder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
+                    queryBuilder.insertQuery(table, name)
+                    queryBuilder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
                     # PLAINTIFF LAWYER 추가 부분
-                    query_builder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, plaintiff_win, plaintiff_lose, draw)
+                    queryBuilder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, plaintiff_win, plaintiff_lose, draw)
                     
                     CONN.commit()
                 
@@ -324,17 +325,17 @@ while(t_date != END_POINT):
                     table = "LAWYER_INFORMATION"
                     lawyer_type = "defendant"
                     
-                    query_builder.insertQuery(table, name)
-                    query_builder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
+                    queryBuilder.insertQuery(table, name)
+                    queryBuilder.updateQuery(lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw)
                     
                     # DEFENDANT LAWYER 추가 부분
-                    query_builder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, defendant_win, defendant_lose, draw)
+                    queryBuilder.insertQuery2(CASE_ID, lawyer_type + "_lawyer", name, defendant_win, defendant_lose, draw)
                     
                     CONN.commit()
                 
                 #  Decision Keyword 추가 부분
                 for keyword in decision_keywords:
-                    query_builder.insertDecisonKeyword(CASE_ID, keyword)
+                    queryBuilder.insertDecisonKeyword(CASE_ID, keyword)
                     
                 CONN.commit()
 
