@@ -7,20 +7,17 @@ import model
 import traceback
 from formattor import DateFormattor, Tokenizer
 import datetime
-#from transformers import pipeline
 
-START_PAGE = 1
+t_date = "04/01/2010" # <- 요고 바꿀 것
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
 total_time = 0
-t_date = "09/07/2024"
 request = Request()
 nleModel = model.NLE()
 urlBuilder = URLBuilder()
 dateFormattor = DateFormattor()
 queryBuilder = QueryBuilder(CURSOR)
-#question_answerer = pipeline('question-answering', device='cuda')
 
 def printLinkAndlabels(link, labels):
     print("============================================")
@@ -184,11 +181,11 @@ def lawyerClassification(profession, lawyer, pa, da):
     return p_attorney, d_attorney
 
 while(t_date != END_POINT):
-    url =  urlBuilder.add_param("transitionType", "Default").add_param("contextData", "(sc.Default)").add_param("query", "advanced: N.Y.Sup ").add_param("Template", "Decision").add_param("t_querytext", "N.Y.Sup. but not Appellate").add_param("t_p", "LE").add_param("t_date", t_date.replace("%2F", "/")).build()
+    url =  urlBuilder.add_param("transitionType", "Default").add_param("contextData", "(sc.Default)").add_param("query", "advanced: N.Y.Sup but not Appellate ").add_param("Template", "Decision").add_param("t_querytext", "N.Y.Sup. but not Appellate").add_param("t_p", "LE").add_param("t_date", t_date.replace("%2F", "/")).build()
     response = request.get(url)
     count = returnCount(response.select_one("#co_twoColumnContent > h1").get_text())
 
-    for i in range(START_PAGE, START_PAGE + count):
+    for i in range(1, count + 1):
         # link 추출
         t1 = time.time()
         url = urlBuilder.add_param("Page", i).build()
@@ -198,6 +195,7 @@ while(t_date != END_POINT):
         t2 = time.time()
         
         print(f"link count : {len(links)}, Spent time : {t2 - t1}")
+        print(url)
         
         total_time += t2 - t1
         
@@ -218,7 +216,7 @@ while(t_date != END_POINT):
                 if response == None:
                     print("response == None")
                     continue
-
+                
                 court, plaintiff, defendant, index_no, date, attorney_block, paragraph_block, t_date = findElement(response)
                 
                 if court.lower().find("appellate") != -1 or court.lower().find("first") != -1 or court.lower().find("second") != -1 or court.lower().find("third") != -1:
@@ -241,14 +239,13 @@ while(t_date != END_POINT):
                             else:
                                 da = True
                 
-                if len(labels) == 1:
-                    print("skip, labels len is 1")
-                    continue
-                
-                printLinkAndlabels(link, labels)
-                
-                lawyer = predictLawyer(nleModel, attorney_list, lawyer)
-                p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
+                p_attorney, d_attorney = ["Unknown"], ["Unknown"]
+
+                if len(labels) > 1:
+                    printLinkAndlabels(link, labels)
+                    
+                    lawyer = predictLawyer(nleModel, attorney_list, lawyer)
+                    p_attorney, d_attorney = lawyerClassification(profession, lawyer, pa, da)
                 
                 for x in paragraph_block:
                     decision_paragraph.append(x.getText())
@@ -352,8 +349,7 @@ while(t_date != END_POINT):
 
     print(f"Total Time : {total_time}")
     
-    if START_PAGE > 1:
-        START_PAGE = 1
+    START_PAGE = 1
         
 CONN.close()
     

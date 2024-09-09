@@ -73,13 +73,13 @@ class QueryBuilder:
     def updateQuery(self, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw):
         if lawyer_type == "plaintiff":
             # CASE: WIN
-            if plaintiff_win > defendant_win:
+            if plaintiff_win > plaintiff_lose:
                 LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
                 self.CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
             
             # CASE: LOSE
-            elif plaintiff_win < defendant_win:
+            elif plaintiff_win < plaintiff_lose:
                 LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {plaintiff_win}, LOSE = LOSE + {plaintiff_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
                 self.CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
@@ -91,13 +91,13 @@ class QueryBuilder:
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
                 
         elif lawyer_type == "defendant":
-            if plaintiff_win > defendant_win:
+            if defendant_win > defendant_lose:
                 LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_WIN = CASE_WIN + 1 WHERE NAME = '{name}'"
                 self.CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
             
             # CASE: LOSE
-            elif plaintiff_win < defendant_win:
+            elif defendant_win < defendant_lose:
                 LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_LOSE = CASE_LOSE + 1 WHERE NAME = '{name}'"
                 self.CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
