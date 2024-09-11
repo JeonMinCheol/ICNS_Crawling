@@ -8,7 +8,7 @@ import traceback
 from formattor import DateFormattor, Tokenizer
 import datetime
 
-t_date = "04/01/2010" # <- 요고 바꿀 것
+t_date = "12/31/1930" # <- 요고 바꿀 것
 END_POINT = "05/21/1876"
 CONN = pymysql.connect(host="163.180.117.35", user="user", password="my0504", port= 3306, database="mysql_db", charset="utf8")                        
 CURSOR = CONN.cursor()
