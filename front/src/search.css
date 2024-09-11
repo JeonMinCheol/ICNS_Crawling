@@ -1,0 +1,40 @@
+.scroll-container {
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+.nav-container {
+    border-bottom: 1px solid #ddd;
+}
+
+.item {
+    margin-bottom: 15px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item > div {
+    flex-direction: column;
+}
+
+.flex {
+    display:flex;
+    align-items: center;
+    justify-content: space-between;
+}
+  
+.item:last-child {
+    border-bottom: none;
+}
+
+h3 {
+    padding: 0 10px;
+}
+
+body {
+    background-color: rgb(243, 243, 243);
+}
