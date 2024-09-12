@@ -212,7 +212,7 @@ public class CaseService {
     public ResponseEntity<?> indexSearchResponse(String indexNo, String page) throws Exception {
         if(indexNo.equals("null")) {
             List<CaseInformationDTO> caseInformationDTOList = caseInformationRepo
-                    .searchAll( Integer.parseInt(page));
+                    .searchAll(Integer.parseInt(page));
             return new ResponseEntity<List<CaseInformationDTO>>(caseInformationDTOList, HttpStatus.OK);
         }
 
@@ -234,6 +234,7 @@ public class CaseService {
 
         for (int i = 0; i < allByKeyword.size(); i++) {
             int caseId = allByKeyword.get(i).getCaseId();
+            log.info(String.valueOf(caseId));
 
             if (caseIds.contains(caseId))
                 continue;
