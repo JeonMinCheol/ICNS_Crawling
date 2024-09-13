@@ -1,6 +1,7 @@
 import "./lawyer_info.css"
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
+import axiosInstance from './axiosInstance.js';
 const caseUrl = 'http://localhost:8080/api/caseinfo?casename=';
 
 function urlBuild(base, param1, param2) {
@@ -16,19 +17,16 @@ function Case() {
   const [error, setError] = useState(null);
   const fetchData = async () => {
     try {
-      // API 호출
-      const response = await fetch(urlBuild(caseUrl, name, date));
+      const response = await axiosInstance.get(urlBuild(caseUrl, name, date)).then(response => {
+        return response
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
       
-      // 응답이 성공적이지 않은 경우 에러 처리
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      
-      // JSON 데이터 파싱
-      const result = await response.json();
       
       // state에 데이터 저장
-      setData(result);
+      setData(response.data);
     } catch (err) {
       // 에러가 발생한 경우 에러 메시지 저장
       setError(err.message);

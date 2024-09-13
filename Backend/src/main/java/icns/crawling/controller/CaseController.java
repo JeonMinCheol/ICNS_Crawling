@@ -16,6 +16,7 @@ import static org.hibernate.query.sqm.tree.SqmNode.log;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class CaseController {
     private final CaseService caseService;
 

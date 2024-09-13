@@ -2,10 +2,12 @@ import "./search.css"
 import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import PaginationComponent from './pagination';
+import axiosInstance from './axiosInstance';
 const lawyerSearchUrl = 'http://localhost:8080/api/search/lawyer?lawyer=';
 const indexSearchUrl = 'http://localhost:8080/api/search/index?indexNo=';
 const keywordSearchUrl = 'http://localhost:8080/api/search/keyword?keyword=';
 const countSearchUrl = 'http://localhost:8080/api/count';
+const token = localStorage.getItem('token');
 
 function urlBuild(base, param1, page) {
   if(page != null)
@@ -17,21 +19,15 @@ function urlBuild(base, param1, page) {
 const fetchData = async (searchUrl, name = null, setLoading = null, setData = null, nullData1 = null, nullData2 = null, setError = null, page = null) => {
   try {
     // API 호출
-    searchUrl = urlBuild(searchUrl, name, page)
-    console.log(searchUrl)
-    const response = await fetch(searchUrl)
+    const response = await axiosInstance.get(urlBuild(searchUrl, name, page)).then(response => {
+      return response
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
     
-    // 응답이 성공적이지 않은 경우 에러 처리
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    
-    // JSON 데이터 파싱
-    let result = await response.json();
-    console.log(result)
-
     if (setData != null)
-      setData(result);
+      setData(response.data);
     if (nullData1 != null)
       nullData1(null);
     if (nullData2 != null)
@@ -57,7 +53,7 @@ function LawyerSearchBar(param) {
 
   return(
     <div>
-      <div>
+      <div style={{display:"flex"}}>
         <input
           type="text"
           placeholder="Search By a Lawyer"
@@ -67,6 +63,7 @@ function LawyerSearchBar(param) {
     
     <button onClick={() => {
       param.setLoading(true)
+      param.setPage(1)
       param.setUrl(lawyerSearchUrl)
       fetchData(lawyerSearchUrl, searchTerm, param.setLoading, param.setData, param.nullData1, param.nullData2, null, 1); 
       fetchData(countSearchUrl+"/lawyer?lawyer=", searchTerm, null, param.setData2);
@@ -83,8 +80,8 @@ function IndexSearchBar(param) {
   };
 
   return(
-    <div>
-      <div>
+    <div >
+      <div style={{display:"flex"}}>
         <input
           type="text"
           placeholder="Search By a Index No"
@@ -93,6 +90,7 @@ function IndexSearchBar(param) {
         />
         <button onClick={() => {
           param.setLoading(true)
+          param.setPage(1)
           param.setUrl(indexSearchUrl)
           fetchData(indexSearchUrl, searchTerm, param.setLoading, param.setData, param.nullData1, param.nullData2, null, 1); 
           fetchData(countSearchUrl + "/indexNo?indexNo=", searchTerm, null, param.setData2);
@@ -110,7 +108,7 @@ function KeywordSearchBar(param) {
 
   return(
     <div>
-      <div>
+      <div style={{display:"flex"}}>
         <input
           type="text"
           placeholder="Search By a Keyword"
@@ -120,7 +118,7 @@ function KeywordSearchBar(param) {
         <button onClick={() => {
           param.setLoading(true)
           param.setUrl(keywordSearchUrl)
-          console.log(searchTerm)
+          param.setPage(1)
           fetchData(keywordSearchUrl, searchTerm, param.setLoading, param.setData, param.nullData1, param.nullData2, null, 1); 
           fetchData(countSearchUrl + "/keyword?keyword=", searchTerm, null, param.setData2);
       }}>search</button>
@@ -154,47 +152,50 @@ function Search() {
 
   return (
     <>
-      <div style={{display:"flex", justifyContent:"center", margin:"1vh 0"}}>
-        <LawyerSearchBar data={lawyerData} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setIndexData} nullData2 = {setKeywordData}/>
+      <div style={{display:"flex", justifyContent:"center", margin:"1vh 0",}}>
+        <LawyerSearchBar data={lawyerData} setPage={setCurrentPage} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setIndexData} nullData2 = {setKeywordData}/>
         <div style={{width:"1vw"}}/>
-        <IndexSearchBar data={indexData} setData={setIndexData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setLawyerData} nullData2 = {setKeywordData}/>
+        <IndexSearchBar data={indexData} setPage={setCurrentPage} setData={setIndexData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setLawyerData} nullData2 = {setKeywordData}/>
         <div style={{width:"1vw"}}/>
-        <KeywordSearchBar data={keywordData} setData={setKeywordData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setLawyerData} nullData2 = {setIndexData}/>
+        <KeywordSearchBar data={keywordData} setPage={setCurrentPage} setData={setKeywordData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData1 = {setLawyerData} nullData2 = {setIndexData}/>
       </div>
 
       {
       
       lawyerData != null ? <div className="scroll-container">
-        <strong className="number_of_case" style={{margin: "6px"}}>
-          Case founded : {totalcases}
-        </strong>
-        {lawyerData.map(data => (
-          <div className = "nav-container"onClick={() => navigate('/lawyer/' + data.name)}>
-            <div className="flex">
-              <h3>{(currentPage - 1) * 20 + i++}. {data.name}</h3>
-              <div style={{paddingRight: '10px'}}>Total case : {data.count}</div>
-            </div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Lawyer</th>
+              <th>Case</th>
+              <th>Win</th>
+              <th>Lose</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
 
-            <div key={data.name} className="item">
-              <div>
-                <div>Winning rate : {(Number(data.case_win) / Number(data.count) * 100).toPrecision(3)}%</div>
-              </div>
-
-              <div> 
-                <div>Win : {data.case_win}</div>
-                <div>Lose : {data.case_lose}</div> 
-              </div>
-            </div>
-          </div>
-          ))
-        }
+          <tbody>
+            {lawyerData.map(data => (
+              <tr className = "nav-container"onClick={() => navigate('/lawyer/' + data.name)}>
+                    <td>{(currentPage - 1) * 20 + i++}</td>
+                    <td >{data.name}</td>
+                    <td>{data.count}</td>
+                    <td>{data.case_win}</td>
+                    <td>{data.case_lose}</td>
+                    <td>{(Number(data.case_win) / Number(data.count) * 100).toPrecision(3)}%</td>
+              </tr>
+            ))}
+          </tbody>
+          
+      </table>
       </div> : null}
 
-      {indexData != null ? 
+      {lawyerData == null && indexData != null ? 
         <header className="App-header">
           <br/>
           <strong className="number_of_case" style={{margin: "6px"}}>
-          Case founded : {totalcases}
+          Index Data founded : {totalcases}
           </strong>
           <div className="list-container">
               {indexData.map((_, index) => (
@@ -210,11 +211,11 @@ function Search() {
         </header> : null
       }
 
-      {keywordData != null ? 
+      {lawyerData == null && keywordData != null ? 
         <header className="App-header">
           <br/>
           <strong className="number_of_case" style={{margin: "6px"}}>
-             Case founded : {totalcases}
+            Keyword Data founded : {totalcases}
           </strong>
             
           <div className="list-container">
