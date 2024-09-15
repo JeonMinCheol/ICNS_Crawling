@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import "./login.css"
+import baseUrl from './env';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const Login = () => {
         event.preventDefault();
         
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/', {
+            const response = await axios.post(baseUrl + '/api/auth/', {
                 email,
                 password
             });

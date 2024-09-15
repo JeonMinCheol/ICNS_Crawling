@@ -2,7 +2,9 @@ import "./lawyer_info.css"
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from './axiosInstance';
-const lawyerUrl = 'http://localhost:8080/api/lawyerinfo?lawyer=';
+import baseUrl from "./env.js";
+
+const lawyerUrl = baseUrl + '/api/lawyerinfo?lawyer=';
 
 function urlBuild(base, param1) {
   return base + param1
@@ -72,7 +74,7 @@ function Laywer_Info() {
               <h3 onClick={() =>navigate("/case/" + data.caseName[index] +"/date/"+ data.date[index])}>{data.caseName[index]}</h3>
               <div><strong>Date:</strong> {data.date[index]}</div>
               <div><strong>Index No:</strong> {data.indexNo[index]}</div>
-              <div className = "url"><strong>URL:</strong> <a href={data.url[index]} target="_blank" rel="noopener noreferrer">{data.url[index]}</a></div>
+              <div><strong>▶<a href={data.url[index]} target="_blank" rel="noopener noreferrer">Case Link</a></strong></div>
             </div>
           ))}
         </div>

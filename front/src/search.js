@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import PaginationComponent from './pagination';
 import axiosInstance from './axiosInstance';
-const lawyerSearchUrl = 'http://localhost:8080/api/search/lawyer?lawyer=';
-const indexSearchUrl = 'http://localhost:8080/api/search/index?indexNo=';
-const keywordSearchUrl = 'http://localhost:8080/api/search/keyword?keyword=';
-const countSearchUrl = 'http://localhost:8080/api/count';
-const token = localStorage.getItem('token');
+import baseUrl from "./env.js";
+
+const lawyerSearchUrl = baseUrl + '/api/search/lawyer?lawyer=';
+const indexSearchUrl = baseUrl + '/api/search/index?indexNo=';
+const keywordSearchUrl = baseUrl + '/api/search/keyword?keyword=';
+const countSearchUrl = baseUrl + '/api/count';
 
 function urlBuild(base, param1, page) {
   if(page != null)
@@ -224,7 +225,7 @@ function Search() {
                 <h3 onClick={() =>navigate("/case/" + keywordData[index].caseName +"/date/" + keywordData[index].decisionDate)}>{keywordData[index].caseName}</h3>
                 <div><strong>Date:</strong> {keywordData[index].decisionDate}</div>
                 <div><strong>Index No:</strong> {keywordData[index].indexNo}</div>
-                <div><strong>URL:</strong> <a href={keywordData[index].url} target="_blank" rel="noopener noreferrer">{keywordData[index].url}</a></div>
+                <div><strong>▶<a href={keywordData[index].url} target="_blank" rel="noopener noreferrer">Case Link</a></strong></div>
               </div>
             ))} 
             </div>

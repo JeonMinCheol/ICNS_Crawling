@@ -2,7 +2,9 @@ import "./lawyer_info.css"
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from './axiosInstance.js';
-const caseUrl = 'http://localhost:8080/api/caseinfo?casename=';
+import baseUrl from "./env.js";
+
+const caseUrl = baseUrl + '/api/caseinfo?casename=';
 
 function urlBuild(base, param1, param2) {
   return base + param1 + "&date=" + param2
