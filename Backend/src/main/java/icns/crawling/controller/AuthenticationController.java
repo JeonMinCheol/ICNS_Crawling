@@ -30,7 +30,7 @@ public class    AuthenticationController {
             return new ResponseEntity<>(authenticationService.authentication(authenticationRequest), HttpStatus.OK);
         } catch(Exception e) {
             log.info(String.valueOf(e));
-            return ResponseEntity.ok().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
