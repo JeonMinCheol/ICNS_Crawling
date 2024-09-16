@@ -204,7 +204,7 @@ function Search() {
                 <h3 onClick={() =>navigate("/case/" + indexData[index].caseName + "/date/" + indexData[index].decisionDate)}>{indexData[index].caseName}</h3>
                 <div><strong>Date:</strong> {indexData[index].decisionDate}</div>
                 <div><strong>Index No:</strong> {indexData[index].indexNo}</div>
-                <div><strong>URL:</strong> <a href={indexData[index].url} target="_blank" rel="noopener noreferrer">{indexData[index].url}</a></div>
+                <div><strong>▶<a href={indexData[index].url} target="_blank" rel="noopener noreferrer">Case Link</a></strong></div>
               </div>) )
               }
               
