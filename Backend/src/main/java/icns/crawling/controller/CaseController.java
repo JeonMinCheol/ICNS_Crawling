@@ -61,16 +61,6 @@ public class CaseController {
         }
     }
 
-    @GetMapping(value = "/search/keyword")
-    public ResponseEntity<?> searchByKeyword(@RequestParam(value = "keyword") String keyword, @RequestParam(value="page") String page) throws IOException {
-        try{
-            return caseService.keywordSearchResponse(keyword, page);
-        } catch (Exception e) {
-            log.info(e.getMessage());
-            return ResponseEntity.status(204).build();
-        }
-    }
-
     @GetMapping(value = "/count/lawyer")
     public ResponseEntity<?> lawyerCount(@RequestParam(value = "lawyer") String lawyer) {
         try{
@@ -85,16 +75,6 @@ public class CaseController {
     public ResponseEntity<?> indexNoCount(@RequestParam(value = "indexNo") String indexNo) {
         try{
             return caseService.indexNoCounting(indexNo);
-        } catch (Exception e) {
-            log.info(e.getMessage());
-            return ResponseEntity.status(204).build();
-        }
-    }
-
-    @GetMapping(value = "/count/keyword")
-    public ResponseEntity<?> keywordCount(@RequestParam(value = "keyword") String keyword) {
-        try{
-            return caseService.keywordCounting(keyword);
         } catch (Exception e) {
             log.info(e.getMessage());
             return ResponseEntity.status(204).build();

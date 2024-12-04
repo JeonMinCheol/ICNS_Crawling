@@ -14,22 +14,20 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "LAWYER_INFORMATION")
+@Table(name = "LAWYER_INFO")
 public class LawyerInformationDTO {
     @Id
     @Column(name = "_id")
     private int id;
-    @Column(name = "NAME")
+    @Column(name = "LAWYER_NAME")
     private String name;
+    @Column(name = "LAWFIRM")
+    private String lawfirm;
     @Column(name = "WIN")
     private int win;
     @Column(name = "LOSE")
     private int lose;
     @Column(name = "COUNT")
     private int count;
-    @Column(name = "CASE_WIN")
-    private int case_win;
-    @Column(name = "CASE_LOSE")
-    private int case_lose;
 
 }

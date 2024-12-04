@@ -1,6 +1,5 @@
 package icns.crawling.service;
 
-import icns.crawling.dto.IndexResponseDTO;
 import icns.crawling.dto.SearchResponseDTO;
 import icns.crawling.dto.SimpleResponseDTO;
 import icns.crawling.model.*;
@@ -8,13 +7,13 @@ import icns.crawling.dto.DetailedResponseDTO;
 import icns.crawling.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static java.lang.Math.max;
@@ -26,11 +25,10 @@ public class CaseService {
     private final CaseInformationRepo caseInformationRepo;
     private final PlaintiffLawyerRepo plaintiffLawyerRepo;
     private final DefendantLawyerRepo defendantLawyerRepo;
-    private final DecisionKeywordRepo decisionKeywordRepo;
+    private final CaseDecisionRepo caseDecisionRepo;
     private final LawyerInformationRepo lawyerInformationRepo;
 
     public ResponseEntity<?> responseCaseDetailedInfo(String casename, String date) throws Exception {
-        Integer[] count = new Integer[] { 0, 0, 0, 0 };
         ArrayList<String> pname = new ArrayList<>(){};
         ArrayList<String> dname = new ArrayList<>(){};
 
@@ -45,39 +43,29 @@ public class CaseService {
         List<DefendantLawyerDTO> defendantLawyer = defendantLawyerRepo
                 .findAllByCaseId(caseId);
 
-        List<DecisionKeywordDTO> decisionKeyword = decisionKeywordRepo
+        List<CaseDecisionDTO> caseDecisionDTOS = caseDecisionRepo
                 .findAllByCaseId(caseId);
 
         if(plaintiffLawyer.size() > 0){
-            PlaintiffLawyerDTO pfirst = plaintiffLawyer.get(0);
-            ArrayList<String> Name = new ArrayList<>();
-
             for (int i=0; i<plaintiffLawyer.size(); i++) {
                 PlaintiffLawyerDTO plaintiffLawyerDTO = plaintiffLawyer.get(i);
                 pname.add(plaintiffLawyerDTO.getName());
             }
-            count[0] = pfirst.getWin();
-            count[1] = pfirst.getLose();
         }
 
         if (defendantLawyer.size() > 0) {
-            DefendantLawyerDTO dfirst = defendantLawyer.get(0);
-            ArrayList<String> Name = new ArrayList<>();
-
             for (int i=0; i<defendantLawyer.size(); i++) {
                 DefendantLawyerDTO defendantLawyerDTO = defendantLawyer.get(i);
                 dname.add(defendantLawyerDTO.getName());
             }
-            count[2] = dfirst.getWin();
-            count[3] = dfirst.getLose();
         }
 
-        List<String> keywords = new ArrayList<>();
+        List<String> sentences = new ArrayList<>();
         List<String> paragraphs = new ArrayList<>();
 
-        for(int i=0; i < decisionKeyword.size(); i++) {
-            keywords.add(decisionKeyword.get(i).getKeyword().trim());
-            paragraphs.add(decisionKeyword.get(i).getParagraph().trim());
+        for(int i=0; i < caseDecisionDTOS.size(); i++) {
+            sentences.add(caseDecisionDTOS.get(i).getSentence().trim());
+            paragraphs.add(caseDecisionDTOS.get(i).getParagraph().trim());
         }
 
         DetailedResponseDTO detailedDTO = DetailedResponseDTO.builder()
@@ -86,16 +74,19 @@ public class CaseService {
                 .indexNo(caseDTO.getIndexNo())
                 .plaintiff(caseDTO.getPlaintiff())
                 .defendant(caseDTO.getDefendant())
+                .incidentReason(caseDTO.getIncidentReason())
+                .slipOp(caseDTO.getSlipOp())
+                .summary(caseDTO.getSummary())
                 .plaintiffLawyerName(pname)
-                .plaintiffLawyerWin(count[0])
-                .plaintiffLawyerLose(count[1])
                 .defendantLawyerName(dname)
-                .defendantLawyerWin(count[2])
-                .defendantLawyerLose(count[3])
-                .keyword(keywords)
-                .paragraph(paragraphs)
-                .url(caseDTO.getUrl())
+                .plaintiffLawyerNum(pname.size())
+                .defendantLawyerNum(dname.size())
+                .sentences(sentences)
+                .paragraphs(paragraphs)
                 .decisionDate(caseDTO.getDecisionDate())
+                .caseKind(caseDTO.getCaseKind())
+                .judgeName(caseDTO.getJudgeName())
+                .result(caseDTO.getResult())
                 .build();
 
         return new ResponseEntity<DetailedResponseDTO>(detailedDTO, HttpStatus.OK);
@@ -107,8 +98,8 @@ public class CaseService {
 
         int lawyerNo = lawyerDTO.getId();
         int count = lawyerDTO.getCount();
-        int caseLose = lawyerDTO.getCase_lose();
-        int caseWin = lawyerDTO.getCase_win();
+        int caseLose = lawyerDTO.getLose();
+        int caseWin = lawyerDTO.getWin();
 
         List<PlaintiffLawyerDTO> allByLawyerNo = plaintiffLawyerRepo.findAllByLawyerNo(lawyerNo);
         List<DefendantLawyerDTO> allByLawyerNo1 = defendantLawyerRepo.findAllByLawyerNo(lawyerNo);
@@ -120,44 +111,36 @@ public class CaseService {
         }
 
         List<CaseInformationDTO> c = caseInformationRepo.findAllById(caseIds);
-        List<Integer> win = new ArrayList<>();
-        List<Integer> lose = new ArrayList<>();
-        List<String> caseName = new ArrayList<>();
-        List<String> url = new ArrayList<>();
-        List<String> indexNo = new ArrayList<>();
-        List<Date> date = new ArrayList<>();
+        List<String> caseNames = new ArrayList<>();
+        List<String> indexNos = new ArrayList<>();
+        List<String> summarys = new ArrayList<>();
+        List<String> courtNames = new ArrayList<>();
+        List<String> caseKinds = new ArrayList<>();
+        List<Date> dates = new ArrayList<>();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate dateFilter = LocalDate.parse("1999-01-01", formatter);
 
         for(int i=0; i<c.size(); i++) {
             CaseInformationDTO info = c.get(i);
-            caseName.add(info.getCaseName());
-            url.add((info.getUrl()));
-            indexNo.add(info.getIndexNo());
-            date.add(info.getDecisionDate());
-            Optional<PlaintiffLawyerDTO> p = plaintiffLawyerRepo.findByLawyerNoAndCaseId(lawyerNo, info.get_id());
-            Optional<DefendantLawyerDTO> d = defendantLawyerRepo.findByLawyerNoAndCaseId(lawyerNo, info.get_id());
+            if (info.getDecisionDate().toLocalDate().isBefore(dateFilter)) continue;
 
-            if(p.isPresent()){
-                win.add(p.get().getWin());
-                lose.add(p.get().getLose());
-            }
-
-            if(d.isPresent()){
-                win.add(d.get().getWin());
-                lose.add(d.get().getLose());
-            }
+            caseNames.add(info.getCaseName());
+            indexNos.add(info.getIndexNo());
+            dates.add(info.getDecisionDate());
+            summarys.add(info.getSummary());
+            caseKinds.add(info.getCaseKind());
+            courtNames.add(info.getCourtName());
         }
 
         SimpleResponseDTO simpleResponseDTO = SimpleResponseDTO
                 .builder()
                 .name(lawyer)
-                .caseName(caseName)
-                .date(date)
-                .indexNo(indexNo)
-                .win(win)
-                .lose(lose)
-                .url(url)
-                .case_win(caseWin)
-                .case_lose(caseLose)
+                .caseName(caseNames)
+                .date(dates)
+                .indexNo(indexNos)
+                .win(caseWin)
+                .lose(caseLose)
                 .count(count)
                 .build();
 
@@ -168,19 +151,18 @@ public class CaseService {
         List<SearchResponseDTO> SearchResponseDTOList = new ArrayList<>();
 
         log.info(String.valueOf(lawyer.equals("null")));
+        int pageSize = 50;
 
+        // 검색어가 없는 경우
         if(lawyer.equals("null")) {
-            for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchAll(Integer.parseInt(page))) {
-                if (lawyerInformationDTO.getName().equals("Unknown"))
-                    continue;
-
+            for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchAll(pageSize * Integer.parseInt(page))) {
                 SearchResponseDTO searchResponseDTO = SearchResponseDTO
                         .builder()
                         .name(lawyerInformationDTO.getName())
                         .win(lawyerInformationDTO.getWin())
                         .lose(lawyerInformationDTO.getLose())
-                        .case_win(lawyerInformationDTO.getCase_win())
-                        .case_lose(lawyerInformationDTO.getCase_lose())
+                        .win(lawyerInformationDTO.getWin())
+                        .lawfirm(lawyerInformationDTO.getLawfirm())
                         .count(lawyerInformationDTO.getCount())
                         .build();
 
@@ -189,7 +171,8 @@ public class CaseService {
             return new ResponseEntity<List<SearchResponseDTO>>(SearchResponseDTOList, HttpStatus.OK);
         }
 
-        for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchLawyerByName(lawyer, Integer.parseInt(page))) {
+        // 검색어가 있는 경우
+        for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchLawyerByName(lawyer, pageSize * Integer.parseInt(page))) {
             if (lawyerInformationDTO.getName().equals("Unknown"))
                 continue;
 
@@ -198,8 +181,8 @@ public class CaseService {
                     .name(lawyerInformationDTO.getName())
                     .win(lawyerInformationDTO.getWin())
                     .lose(lawyerInformationDTO.getLose())
-                    .case_win(lawyerInformationDTO.getCase_win())
-                    .case_lose(lawyerInformationDTO.getCase_lose())
+                    .win(lawyerInformationDTO.getWin())
+                    .lawfirm(lawyerInformationDTO.getLawfirm())
                     .count(lawyerInformationDTO.getCount())
                     .build();
 
@@ -210,51 +193,16 @@ public class CaseService {
     }
 
     public ResponseEntity<?> indexSearchResponse(String indexNo, String page) throws Exception {
+        // 검색어가 없는 경우
         if(indexNo.equals("null")) {
             List<CaseInformationDTO> caseInformationDTOList = caseInformationRepo
-                    .searchAll(Integer.parseInt(page));
+                    .searchAll(Integer.parseInt(page), 50);
             return new ResponseEntity<List<CaseInformationDTO>>(caseInformationDTOList, HttpStatus.OK);
         }
 
+        // 검색어가 있는 경우
         List<CaseInformationDTO> caseInformationDTOList = caseInformationRepo
-                .searchByIndexNo(indexNo, Integer.parseInt(page));
-
-        return new ResponseEntity<List<CaseInformationDTO>>(caseInformationDTOList, HttpStatus.OK);
-    }
-
-    public ResponseEntity<?> keywordSearchResponse(String keyword, String page) throws Exception {
-        List<DecisionKeywordDTO> allByKeyword = null;
-        if(keyword.equals("null"))
-            allByKeyword = decisionKeywordRepo.searchAll(Integer.parseInt(page));
-        else
-            allByKeyword = decisionKeywordRepo.searchByKeyword(keyword, Integer.parseInt(page));
-
-        List<CaseInformationDTO> caseInformationDTOList = new ArrayList<>();
-        Set<Integer> caseIds = new HashSet<>();
-
-        for (int i = 0; i < allByKeyword.size(); i++) {
-            int caseId = allByKeyword.get(i).getCaseId();
-            log.info(String.valueOf(caseId));
-
-            if (caseIds.contains(caseId))
-                continue;
-            else
-                caseIds.add(caseId);
-
-            CaseInformationDTO info = caseInformationRepo.findById(caseId).orElseThrow(Exception::new);
-
-            CaseInformationDTO build = CaseInformationDTO.builder()
-                    .caseName(info.getCaseName())
-                    .url(info.getUrl())
-                    .indexNo(info.getIndexNo())
-                    .plaintiff(info.getPlaintiff())
-                    .defendant(info.getDefendant())
-                    .courtName(info.getCourtName())
-                    .decisionDate(info.getDecisionDate())
-                    .build();
-
-            caseInformationDTOList.add(build);
-        }
+                .searchByIndexNo(indexNo, Integer.parseInt(page), 50);
 
         return new ResponseEntity<List<CaseInformationDTO>>(caseInformationDTOList, HttpStatus.OK);
     }
@@ -270,13 +218,6 @@ public class CaseService {
         long count = 0;
         if (indexNo.equals("null")) count = caseInformationRepo.countAll();
         else count = caseInformationRepo.count(indexNo);
-        return new ResponseEntity<Long>(count, HttpStatus.OK);
-    }
-
-    public ResponseEntity<?> keywordCounting(String keyword) {
-        long count = 0;
-        if (keyword.equals("null")) count = decisionKeywordRepo.countAll();
-        else count = decisionKeywordRepo.count(keyword);
         return new ResponseEntity<Long>(count, HttpStatus.OK);
     }
 }

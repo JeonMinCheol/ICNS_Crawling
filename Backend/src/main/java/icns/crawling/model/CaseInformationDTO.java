@@ -14,19 +14,34 @@ import java.sql.Date;
 @Table(name = "CASE_INFO")
 public class CaseInformationDTO {
     @Id
+    @Column(name = "CASE_ID")
     private int _id;
     @Column(name = "CASE_NAME")
     private String caseName;
+    @Column(name = "CASE_KIND")
+    private String caseKind;
+    @Column(name = "INCIDENT_REASON")
+    private String incidentReason;
     @Column(name = "COURT_NAME")
     private String courtName;
     @Column(name = "INDEX_NO")
     private String indexNo;
-    @Column(name = "PLAINTIFF")
+    @Column(name = "PLAINTIFF_NAME")
     private String plaintiff;
-    @Column(name = "DEFENDANT")
+    @Column(name = "DEFENDANT_NAME")
     private String defendant;
+    @Column(name = "SLIPOP_NO")
+    private String slipOp;
+    @Column(name = "JUDGE_NAME")
+    private String judgeName;
     @Column(name = "DECISION_DATE")
     private Date decisionDate;
-    @Column(name = "URL")
-    private String  url;
+    @Column(name = "PLAINTIFF_LAWYER_NUM")
+    private int plaintiffLawyerNum;
+    @Column(name = "DEFENDANT_LAWYER_NUM")
+    private int defendantLawyerNum;
+    @Column(name = "SUMMARY")
+    private String summary;
+    @Column(name = "RESULT")
+    private String result;
 }

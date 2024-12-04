@@ -21,10 +21,8 @@ public class PlaintiffLawyerDTO {
     private int caseId;
     @Column(name = "LAWYER_NO")
     private int lawyerNo;
-    @Column(name = "NAME")
+    @Column(name = "LAWYER_NAME")
     private String name;
-    @Column(name = "WIN")
-    private int win;
-    @Column(name = "LOSE")
-    private int lose;
+    @Column(name = "RESULT")
+    private String result;
 }

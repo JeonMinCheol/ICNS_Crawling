@@ -9,15 +9,15 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "DECISION_KEYWORD")
-public class DecisionKeywordDTO {
+@Table(name = "CASE_DECISION")
+public class CaseDecisionDTO {
     @Id
     @Column(name = "_id")
     private int id;
     @Column(name = "CASE_ID")
     private int caseId;
-    @Column(name = "KEYWORD")
-    private String keyword;
+    @Column(name = "SENTENCE")
+    private String sentence;
     @Column(name = "PARAGRAPH")
     private String paragraph;
 }

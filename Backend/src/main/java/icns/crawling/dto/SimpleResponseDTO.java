@@ -12,13 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 public class SimpleResponseDTO {
     private String name;
-    private List<Integer> win;
-    private List<Integer> lose;
+    private int win;
+    private int lose;
     private int count;
-    private int case_win;
-    private int case_lose;
     private List<String> caseName;
-    private List<String> url;
     private List<String> indexNo;
     private List<Date> date;
 }

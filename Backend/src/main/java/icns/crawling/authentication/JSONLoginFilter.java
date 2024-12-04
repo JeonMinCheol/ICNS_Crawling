@@ -50,7 +50,7 @@ public class JSONLoginFilter extends AbstractAuthenticationProcessingFilter {
         System.out.println(email + password);
 
 
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);//principal 과 credentials 전달
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);//principal과 credentials 전달
 
         return this.getAuthenticationManager().authenticate(authenticationToken);
     }

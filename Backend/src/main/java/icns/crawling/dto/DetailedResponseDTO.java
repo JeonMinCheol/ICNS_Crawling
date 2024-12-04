@@ -17,23 +17,26 @@ public class DetailedResponseDTO {
     // CaseInformation
     private String caseName;
     private String courtName;
+    private String caseKind;
+    private String incidentReason;
     private String indexNo;
     private String plaintiff;
     private String defendant;
+    private String slipOp;
+    private String judgeName;
     private Date decisionDate;
-    private String url;
+    private String summary;
 
     // Plaintiff's Lawyer
     private List<String> plaintiffLawyerName;
-    private int plaintiffLawyerWin;
-    private int plaintiffLawyerLose;
+    private int plaintiffLawyerNum;
 
     // Defendant's Lawyer
     private List<String> defendantLawyerName;
-    private int defendantLawyerWin;
-    private int defendantLawyerLose;
+    private int defendantLawyerNum;
 
     // Decision Keyword
-    private List<String> keyword;
-    private List<String> paragraph;
+    private List<String> sentences;
+    private List<String> paragraphs;
+    private String result;
 }
