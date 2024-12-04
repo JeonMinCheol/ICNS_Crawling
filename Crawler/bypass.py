@@ -15,10 +15,6 @@ class Request:
     response = requests.post('http://localhost:8191/v1', headers={'Content-Type': 'application/json'}, json=self.post_body)
     
     if response.status_code == 200:
-      soup = BeautifulSoup(response.json()["solution"]["response"], "html.parser")
       print(f"Bypass complete! : {time.time() - s}")
-      return soup
+      print(response.content)
       
-    else:
-      return None
-    

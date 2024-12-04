@@ -1,55 +1,34 @@
 import re
 
-# 검색 키워드
-SEARCH_KEYWORD = ["N.Y.Sup"] # WestLaw
-SKIP_KEYWORD = ["Appellate", "second trial", "3rd trial", "Second Department", "Third Department"]
-HEADERS = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'}
-
 # reulst 키워드
-PLAINTIFF_FAVOR_KEYWORD = [
-    re.compile("Judgement for the plaintiff", re.I), re.compile("Liability establish", re.I), re.compile("Awarded damage", re.I), 
-    re.compile("Verdict for the plaintiff", re.I), re.compile("Breach of duty", re.I), re.compile("Proven by", re.I), re.compile("Defendant pay to the Plaintiff", re.I), 
-    re.compile("Granting the motion", re.I), re.compile("Injunction granted", re.I),re.compile("Guilty", re.I), re.compile("Injunction", re.I),
-    re.compile("Conviction", re.I), re.compile("Sentence", re.I), re.compile("Verdict for the prosecution", re.I), re.compile("Plea bargain", re.I), 
-    re.compile("Beyond a reasonable doubt", re.I),re.compile("Breach of Contract", re.I), re.compile("Breach of fiduciary duty", re.I), 
-    re.compile("Specific Performance", re.I), re.compile("Compensatory damage", re.I), re.compile("Punitive damage", re.I), re.compile("Remedy", re.I),
-    re.compile("Defendant is ORDERED", re.I), re.compile("ORDERED that Defendant", re.I), re.compile("Defendant shall pay", re.I),
-    re.compile("Respondent is ORDERED", re.I), re.compile("ORDERED that Respondent", re.I), re.compile("Respondent shall pay", re.I),
+KEYWORDS = [
+    "liability", "damage", "verdict", "duty", "pay", "guilty", "injunction","conviction", "sentence", "plea bargain", 
+    "contract","performance", "remedy","order","causation", "fail", "evidence", "release",
+    "enrichment", "material", "harm", "judgement", "liable", "dismiss", "action", "grant","denied", "deny", 
+    "prove", "acquittal","exoneration", "doubt", "mistrial", "breach", "claim" "entitle", "lack", "proof",
+    "negligence", "limitation", "risk", "de minimis", "faith", "lack", "standing", "mitigation", "waiver", 
 ]   
-
-DEPANDENT_FAVOR_KEYWORD = [
-    re.compile("Judgement for the defendant", re.I), re.compile("Not Liable", re.I), re.compile("Case Dismiss", re.I), 
-    re.compile("No cause of action", re.I), re.compile("Judgement Granted for defendant", re.I), re.compile("Plaintiff is ORDERED", re.I), 
-    re.compile("Denied Motion",re.I), re.compile("Failure to Prove", re.I), re.compile("No damages award", re.I), 
-    re.compile("Not Guilty", re.I), re.compile("Acquittal", re.I), re.compile("Verdict for the defendant", re.I), 
-    re.compile("Exoneration", re.I), re.compile("Reasonable Doubt", re.I), re.compile("Mistrial", re.I), 
-    re.compile("No breach found", re.I), re.compile("Dismissal of claim", re.I), re.compile("Plaintiff pay to the Defendant", re.I), 
-    re.compile("Counterclaim successful", re.I), re.compile("Defendants are entitled", re.I), re.compile("Respondents are entitled", re.I), 
-    re.compile("Plaintiff shall pay", re.I), re.compile("Petitioner shall pay", re.I), re.compile("ORDERED that Petitioner", re.I),
-    re.compile("Plaintiff has not proven", re.I), re.compile("Plaintiff lacks", re.I), re.compile("ORDERED that Plaintiff", re.I),
-    re.compile("Petitioner has not proven", re.I), re.compile("Petitioner lacks", re.I), 
-]
 
 # 변호사 검색용 키워드
 ATTORNEY_KEYWORD = ["petitioner", "plaintiff", "respondent", "defendant"] 
 
 # 변호인 키워드
 BEFORE_ATTORNEY_COMPILE = [
-    re.compile("Plaintiff(\'?\w?\s?)*\.",re.I),
-    re.compile("Petitioner(\'?\w?\s?)*\.",re.I),
-    re.compile("Defendant(\'?\w?\s?)*\.",re.I),
-    re.compile("Respondent(\'?\w?\s?)*\.",re.I)
+    "Plaintiff\'?\w?\s?*\.",
+    "Petitioner\'?\w?\s?*\.",
+    "Defendant\'?\w?\s?*\.",
+    "Respondent\'?\w?\s?*\."
 ] 
 
 AFTER_ATTORNEY_COMPILE = [
-    re.compile("Plaintiff'?\w?",re.I),
-    re.compile("Petitioner'?\w?",re.I),
-    re.compile("Defendant'?\w?",re.I),
-    re.compile("Respondent'?\w?",re.I)
+    "Plaintiff'?\w?",
+    "Petitioner'?\w?",
+    "Defendant'?\w?",
+    "Respondent'?\w?"
 ]
 
 # 제거 키워드
-REMOVE_KEYWORD = ["we", ",", "Esq", "Esq.", "ESQ", "ESQ." "(", ")", "P.C.", " .", "Plaintiff", "Petitioner", "Defendant", "Respondent", "Appellant" "appellant", "respondent", "plaintiff", "petitional", "defendent"]
+REMOVE_KEYWORD = ["we", ",", "Esq", "Esq.", "ESQ", "ESQ." "", "", "P.C.", " .", "Plaintiff", "Petitioner", "Defendant", "Respondent", "Appellant" "appellant", "respondent", "plaintiff", "petitional", "defendent"]
 
 LOC = [
     "New York",

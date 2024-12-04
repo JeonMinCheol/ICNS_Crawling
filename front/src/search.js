@@ -179,7 +179,7 @@ function Search() {
           <tbody>
             {lawyerData.map(data => (
               <tr className = "nav-container"onClick={() => navigate('/lawyer/' + data.name)}>
-                    <td>{(currentPage - 1) * 20 + i++}</td>
+                    <td>{(currentPage - 1) * 50 + i++}</td>
                     <td >{data.name}</td>
                     <td>{data.count}</td>
                     <td>{data.case_win}</td>
@@ -235,7 +235,7 @@ function Search() {
 
       <PaginationComponent
         currentPage={currentPage}
-        totalPages={totalcases / 20}
+        totalPages={totalcases / 50}
         onPageChange={setCurrentPage}
         fetchData = {fetchData}
         setData = {

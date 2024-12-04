@@ -1,46 +1,81 @@
-from urllib.parse import urlencode
-# https://govt.westlaw.com/nyofficial/Search/Results?transitionType=Default&contextData=%28sc.Default%29&t_date=09%2F05%2F2024&t_p=LE&t_querytext=N.Y.Sup&Page=1&query=advanced%3A%20N.Y.Sup%20&Template=Decision
-
-# https://govt.westlaw.com/nyofficial/Search/Results?transitionType=Default&contextData=%28sc.Default%29&t_date=05%F05%2F2014&t_p=LE&t_querytext=N.Y.Sup&Page=1&query=advanced%3A%20N.Y.Sup%20&Template=Decision
-class URLBuilder:
+class CaseInfoBuilder:
     def __init__(self):
-        self.scheme = "https"
-        self.domain = "govt.westlaw.com"
-        self.path = "nyofficial/Search/Results"
-        self.params = {}
-        self.port = None
-
-    def set_scheme(self, scheme):
-        self.scheme = scheme
-        return self
-
-    def set_domain(self, domain):
-        self.domain = domain
-        return self
-
-    def set_port(self, port):
-        self.port = port
-        return self
-
-    def set_path(self, path):
-        self.path = path
-        return self
+        self.CASE_NAME = "Unknown"
+        self.COURT_NAME = "Unknown"
+        self.JUDGE_NAME = "Unknown"
+        self.INDEX_NO = "Unknown"
+        self.SLIPOP_NO = "Unknown"
+        self.PLAINTIFF_NAME = "Unknown"
+        self.DEFENDANT_NAME = "Unknown"
+        self.PLAINTIFF_LAWYER_NO = 0
+        self.DEFENDANT_LAWYER_NO = 0
+        self.DECISION_DATE = "1900-01-01"
+        self.LAYWYER_INFO = {} # LAWYER_NAME: [ [의뢰인 이름, 의뢰인과의 관계], .. ]
+        self.LAWYER_LAWFIRM = {} # LAWYER_NAME: [LAWFIRM, LOCATION]
+        self.KEYWORDS = {} # KEYWORD: [PARAGRAPHS, ..]
+        self.LAWYER_PARAGRAPH = ""
+        self.KEYWORD_PARAGRAPH = ""
     
-    def add_param(self, key, value):
-        self.params[key] = value
-        return self
+    def __str__(self):
+        info = f"""
+            case name : {self.CASE_NAME},
+            court name : {self.COURT_NAME},
+            judge name : {self.JUDGE_NAME}
+            index no : {self.INDEX_NO}
+            slip op : {self.SLIPOP_NO}
+            plaintiff : {self.PLAINTIFF_NAME}
+            defendant : {self.DEFENDANT_NAME}
+            plaintiff_lawyer_no : {self.PLAINTIFF_LAWYER_NO}
+            defendant_lawyer_no : {self.DEFENDANT_LAWYER_NO}
+            date : {self.DECISION_DATE}
+            lawyer: {self.LAYWYER_INFO.items()}
+            lawfirm: {self.LAWYER_LAWFIRM.items()}
+            keywords: {self.KEYWORDS.items()}
+            raw_lawyer_paragraph: {self.LAWYER_PARAGRAPH}
+        """
 
-    def build(self):
-        url = f"{self.scheme}://{self.domain}"
-        if self.port:
-            url += f":{self.port}"
-        if self.path:
-            url += f"/{self.path}"
-        if self.params:
-            query_string = urlencode(self.params)
-            url += f"?{query_string}"
-        return url
-    
+        return info
+
+    def clear(self):
+        self.CASE_NAME = "Unknown"
+        self.COURT_NAME = "Unknown"
+        self.JUDGE_NAME = "Unknown"
+        self.INDEX_NO = "Unknown"
+        self.SLIPOP_NO = "Unknown"
+        self.PLAINTIFF_NAME = "Unknown"
+        self.DEFENDANT_NAME = "Unknown"
+        self.PLAINTIFF_LAWYER_NO = 0
+        self.DEFENDANT_LAWYER_NO = 0
+        self.DECISION_DATE = "1900-01-01"
+        self.URL = ""
+        self.LAYWYER_INFO = {} # LAWYER_NAME: [ [의뢰인 이름, 의뢰인과의 관계], .. ]
+        self.LAWYER_LAWFIRM = {} # LAWYER_NAME: [LAWFIRM, LOCATION]
+        self.KEYWORDS = {} # KEYWORD: [PARAGRAPHS, ..]
+
+    def setLawyerNo(self, p_no, d_no):
+        self.PLAINTIFF_LAWYER_NO = p_no
+        self.DEFENDANT_LAWYER_NO = d_no
+
+    def addKeyword(self, keyword, para):
+        keyword_paragraphs = self.KEYWORDS.get(keyword)
+        if keyword_paragraphs is None:
+            self.KEYWORDS[keyword] = list(para)
+        else:
+            keyword_paragraphs.append(para)
+            self.KEYWORDS[keyword] = keyword_paragraphs
+
+    def addLawyer(self, lawyer, customer, relationship, lawfirm, loc):
+        customer_relationship = self.LAWYER_INFO.get(lawyer)
+        if customer_relationship is None:
+            self.LAWYER_INFO[lawyer] = [[customer, relationship]]
+            self.LAWYER_LAWFIRM[lawyer] = [lawfirm, loc]
+        else:
+            customer_relationship.append([customer, relationship])
+            self.LAWYER_INFO[lawyer] = customer_relationship
+            x = self.LAWYER_LAWFIRM[lawyer]
+            x.append([lawfirm, loc])
+            self.LAWYER_LAWFIRM[lawyer] = x
+        
 class QueryBuilder:
     def __init__(self, CURSOR):
         self.CURSOR = CURSOR
