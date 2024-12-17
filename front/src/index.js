@@ -1,10 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import Laywer_Info from './lawyer_info';
-import reportWebVitals from './reportWebVitals';
-import Search from './search'
-import Login from './login'
-import Case from './case'
+import Laywer_Info from './view/lawyer_info.js';
+import Search from './view/search'
+import Login from './view/login'
+import Case from './view/case'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -19,4 +18,3 @@ root.render(
 			</BrowserRouter>
 );
 
-reportWebVitals();

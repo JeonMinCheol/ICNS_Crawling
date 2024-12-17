@@ -1,0 +1,100 @@
+.scroll-container {
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.nav-container {
+    border-bottom: 1px solid #ddd;
+}
+
+.item {
+    margin-bottom: 15px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item > div {
+    flex-direction: column;
+}
+
+.flex {
+    display:flex;
+    align-items: center;
+    justify-content: space-between;
+}
+  
+.item:last-child {
+    border-bottom: none;
+}
+
+h3 {
+    padding: 0 10px;
+}
+
+body {
+    background-color: rgb(243, 243, 243);
+}
+
+/* 테이블 기본 스타일 */
+table {
+    width: 60%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+    text-align: left;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    table-layout: fixed;
+  }
+  
+  /* 테이블 헤더 스타일 */
+  thead {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+  }
+  
+  th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* 테이블 바디 스타일 */
+  tbody tr{
+    width: 100%;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  /* 홀수 행과 짝수 행의 배경색을 다르게 */
+  tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  /* 테이블 헤더 중앙 정렬 */
+  thead th, div td {
+    text-align: center;
+  }
+  
+  /* 테이블 셀 클릭 시 시각적 피드백 */
+  .nav-container {
+    width:max-content;
+    transition: transform 0.2s ease;
+  }
+  
+  .nav-container:hover {
+    transform: scale(1.02);
+    background-color: #e2e2e2;
+  }
+  

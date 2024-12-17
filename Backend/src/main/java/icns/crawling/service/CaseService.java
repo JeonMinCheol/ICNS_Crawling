@@ -100,6 +100,7 @@ public class CaseService {
         int count = lawyerDTO.getCount();
         int caseLose = lawyerDTO.getLose();
         int caseWin = lawyerDTO.getWin();
+        String lawfirm = lawyerDTO.getLawfirm();
 
         List<PlaintiffLawyerDTO> allByLawyerNo = plaintiffLawyerRepo.findAllByLawyerNo(lawyerNo);
         List<DefendantLawyerDTO> allByLawyerNo1 = defendantLawyerRepo.findAllByLawyerNo(lawyerNo);
@@ -142,6 +143,7 @@ public class CaseService {
                 .win(caseWin)
                 .lose(caseLose)
                 .count(count)
+                .lawfirm(lawfirm)
                 .build();
 
         return new ResponseEntity<SimpleResponseDTO>(simpleResponseDTO, HttpStatus.OK);

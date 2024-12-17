@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SimpleResponseDTO {
     private String name;
+    private String lawfirm;
     private int win;
     private int lose;
     private int count;

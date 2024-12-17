@@ -1,8 +1,8 @@
-import "./lawyer_info.css"
+import "../css/lawyer_info.css"
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
-import axiosInstance from './axiosInstance';
-import baseUrl from "./baseUrl.js";
+import axiosInstance from '../svc/axiosInstance.js';
+import baseUrl from "../svc/baseUrl.js";
 
 const lawyerUrl = baseUrl + '/api/lawyerinfo?lawyer=';
 
@@ -54,17 +54,20 @@ function Laywer_Info() {
         <button onClick={() => navigate(-1)}>Back to Result</button>
         
         <h2>{data.name}</h2>
-        <h3 style={{paddingLeft:"10px", margin:0, marginTop:"10px"}}>Record</h3>
+        <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Lawfirm</h3>
+        
+        <div style={{paddingLeft:"2em"}}>● {data.lawfirm}</div>
+        <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Record</h3>
 
         <div className="info-container" >
           <div className="win-lose">
-            <div>● Win: {data.case_win}</div>
-            <div>● Lose: {data.case_lose}</div>
+            <div style={{paddingLeft:"2em"}}>● Win: {data.win}</div>
+            <div style={{paddingLeft:"2em"}}>● Lose: {data.lose}</div>
           </div>
         </div>
 
         <br/>
-        <strong className="number_of_case" style={{margin: "6px"}}>
+        <strong className="number_of_case" style={{margin: "1em"}}>
           Total case : {data.count}
         </strong>
 
@@ -74,7 +77,6 @@ function Laywer_Info() {
               <h3 onClick={() =>navigate("/case/" + data.caseName[index] +"/date/"+ data.date[index])}>{data.caseName[index]}</h3>
               <div><strong>Date:</strong> {data.date[index]}</div>
               <div><strong>Index No:</strong> {data.indexNo[index]}</div>
-              <div><strong>▶<a href={data.url[index]} target="_blank" rel="noopener noreferrer">Case Link</a></strong></div>
             </div>
           ))}
         </div>

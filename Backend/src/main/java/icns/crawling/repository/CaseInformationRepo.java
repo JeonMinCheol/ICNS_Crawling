@@ -11,7 +11,8 @@ import java.util.Optional;
 
 
 public interface CaseInformationRepo extends JpaRepository<CaseInformationDTO, Integer> {
-    Optional<CaseInformationDTO> findByCaseNameAndDecisionDate(String caseName, Date date);
+    @Query(value = "SELECT * FROM CASE_INFO WHERE CASE_NAME = :caseName AND DECISION_DATE = :date Limit 1;", nativeQuery = true)
+    Optional<CaseInformationDTO> findByCaseNameAndDecisionDate(@Param("caseName") String caseName, @Param("date") Date date);
     @Query(value = "WITH FilteredRemedies AS ( \n" +
             "                            SELECT *, \n" +
             "                            ROW_NUMBER() OVER (PARTITION BY INDEX_NO ORDER BY CASE_ID) AS row_num \n" +

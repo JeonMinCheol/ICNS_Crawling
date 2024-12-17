@@ -2,7 +2,7 @@ import "./lawyer_info.css"
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from './axiosInstance.js';
-import baseUrl from "./env.js";
+import baseUrl from "./baseUrl.js";
 
 const caseUrl = baseUrl + '/api/caseinfo?casename=';
 

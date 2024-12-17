@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import "./login.css"
-import baseUrl from './baseUrl';
+import "../css/login.css"
+import baseUrl from '../svc/baseUrl';
 
 const Login = () => {
     const [email, setEmail] = useState('');
