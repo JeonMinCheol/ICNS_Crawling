@@ -1,0 +1,3 @@
+"_id";"email";"password";"role"
+1;"rainmaker1231@gmail.com";"{bcrypt}$2a$10$DHQ7lRmeXRDB1nbkcseGXOsNg1gO705uY6oJVhyfSd8ZrfbTHqwDK";"ADMIN"
+2;"admin";"{bcrypt}$2a$10$1AhDs0qYSyZMK.5.eFXrMuFSAWN4N0nV4LibzjPH2TRStW.naiG.2";"ADMIN"
