@@ -33,7 +33,7 @@ public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDT
             "        OR ci.CASE_ID = dl.CASE_ID\n" +
             "    WHERE \n" +
             "        ci.decision_date >= '1999-01-01' \n" +
-            "        AND li.LAWYER_NAME LIKE CONCAT('%', :lawyer, '%')" +
+            "        AND li.LAWYER_NAME LIKE CONCAT('%', :lawyer, '%') AND li.LAWYER_NAME != 'None'" +
             "    GROUP BY \n" +
             "        li._id, li.LAWYER_NAME\n" +
             ") AS aggregated_results\n" +
@@ -64,7 +64,7 @@ public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDT
             "        OR ci.CASE_ID = dl.CASE_ID\n" +
             "    WHERE  \n" +
             "        ci.decision_date >= '1999-01-01' \n" +
-            "        AND li.LAWYER_NAME LIKE CONCAT('%', :lawyer, '%')" +
+            "        AND li.LAWYER_NAME LIKE CONCAT('%', :lawyer, '%') AND li.LAWYER_NAME != 'None'" +
             "    GROUP BY  \n" +
             "        li._id, li.LAWYER_NAME \n" +
             ") AS aggregated_results;", nativeQuery = true)
@@ -91,7 +91,7 @@ public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDT
             "        ON ci.CASE_ID = pl.CASE_ID \n" +
             "        OR ci.CASE_ID = dl.CASE_ID\n" +
             "    WHERE \n" +
-            "        ci.decision_date >= '1999-01-01' \n" +
+            "        ci.decision_date >= '1999-01-01' AND li.LAWYER_NAME != 'None' \n" +
             "    GROUP BY \n" +
             "        li._id, li.LAWYER_NAME\n" +
             ") AS aggregated_results\n" +
@@ -121,7 +121,7 @@ public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDT
             "        ON ci.CASE_ID = pl.CASE_ID \n" +
             "        OR ci.CASE_ID = dl.CASE_ID\n" +
             "    WHERE \n" +
-            "        ci.decision_date >= '1999-01-01' \n" +
+            "        ci.decision_date >= '1999-01-01' AND li.LAWYER_NAME != 'None' \n" +
             "    GROUP BY \n" +
             "        li._id, li.LAWYER_NAME\n" +
             ") AS aggregated_results;", nativeQuery = true)
