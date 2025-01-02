@@ -126,7 +126,7 @@ function Search() {
 
   return (
     <>
-      <div style={{display:"flex", justifyContent:"center", margin:"1vh 0",}}>
+      <div style={{display:"flex", justifyContent:"center", margin:"1vh 0"}}>
         <LawyerSearchBar data={lawyerData} setPage={setCurrentPage} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setIndexData}/>
         <div style={{width:"1vw"}}/>
         <IndexSearchBar data={indexData} setPage={setCurrentPage} setData={setIndexData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setLawyerData}/>
@@ -163,8 +163,8 @@ function Search() {
           
       </table>
       </div> : null}
-
-      {lawyerData == null && indexData != null ? 
+      
+      {lawyerData == null && indexData != null && indexData.length > 0 ? 
         <header className="App-header">
           <br/>
           <strong className="number_of_case" style={{margin: "6px"}}>
@@ -178,13 +178,10 @@ function Search() {
                 <div><strong>Index No:</strong> {indexData[index].indexNo}</div>
               </div>) )
               }
-              
           </div>
         </header> : null
       }
-
       
-
       <PaginationComponent
         currentPage={currentPage}
         totalPages={totalcases / 50}
@@ -192,6 +189,7 @@ function Search() {
         fetchData = {fetchData}
         setData = {
           (data) => {
+            console.log(data)
             if(url === lawyerSearchUrl)
               setLawyerData(data)
             else if(url === indexSearchUrl)

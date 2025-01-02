@@ -53,67 +53,208 @@ function Case() {
   return (
       <header className="App-header">
         <button onClick={() => navigate(-1)}>Back to Result</button>
-        <div className="case-container-1" style={{display: "flex", alignItems: "center", flexDirection: "column"}}>
-          <h1 className="case_name">{name}, {data.caseKind[0].toUpperCase()}{data.caseKind.slice(1).toLowerCase()}</h1>
-        </div>
-
-          <div className="case-container-1" style={{display: "flex", alignItems: "center", flexDirection: "column"}}>
-            <h2 style={{margin:"1em"}}>Case Information</h2>
-            <div className="court" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong>Court: </strong> {data.courtName}</div>
-            <div className="judge" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong>Judge: </strong> {data.judgeName}</div>
-            <div className="decisionDate" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong>Decision Date: </strong> {data.decisionDate}</div>
-            <div className="index_no" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong>Index No: </strong> {data.indexNo}</div>
-            <div className="slip_op_no" style={{ marginBottom:"1vh", fontSize:"1.2em"}}><strong>Slip Opinion No: </strong> {data.slipOp}</div>
-            <div className="result" style={{ fontSize:"1.2em"}}><strong>Case Win: </strong> {data.result[0].toUpperCase()}{data.result.slice(1).toLowerCase()}</div>
+        <div>
+    {Array.isArray(data) ? (
+      data.map((caseData, caseIndex) => (
+        <div key={caseIndex}>
+          {/* 케이스 이름 */}
+          <div
+            className="case-container-1"
+            style={{ display: "flex", alignItems: "center", flexDirection: "column" }}
+          >
+            <h1 className="case_name">
+              {name}, {caseData.caseKind[0].toUpperCase()} 
+              {caseData.caseKind.slice(1).toLowerCase()}, #{caseIndex + 1}
+            </h1>
           </div>
 
-          <div className="case-container-2" style={{display: "flex", alignItems: "center", flexDirection: "column"}}>
-            <br/>
-            <h2 style={{margin:"1em"}}>Plaintiff Information</h2>
-            <div className="plaintiff" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong className="plaintiff">Plaintiff: </strong> {data.plaintiff}</div>
-            {
-              data.plaintiffLawyerName ? 
-              data.plaintiffLawyerName.map(
-                (d, index) => (<div className="plaintiffLawyerName" style={{marginBottom:"1vh", paddingLeft: "20px", fontSize:"1.2em"}}>
-                  <strong className="plaintiff">lawyer {index + 1}: </strong>{d}</div>) 
-              ) : <div style={{marginBottom:"1vh",  fontSize:"1.2em"}}/>
-            }
-            
-            <br/>
-            <h2 style={{margin:"1em"}}>Defendant Information</h2>
-            <div className="defendant" style={{marginBottom:"1vh",  fontSize:"1.2em"}}><strong className="plaintiff">Defendant: </strong> {data.defendant}</div>
-            {
-              data.defendantLawyerName ? 
-              data.defendantLawyerName.map(
-                (d, index) => (<div className="defendantLawyerName" style={{marginBottom:"1vh", paddingLeft: "20px", fontSize:"1.2em"}}>
-                  <strong className="defendant">lawyer {index + 1}: </strong>{d}</div>) 
-              ) : <div style={{marginBottom:"1vh",  fontSize:"1.2em"}}/>
-            }
-           
-           <br/>
-           <h2 style={{margin:"1em"}}>Incident Reason</h2>
-           <strong className="reason" style={{marginBottom:"1vh", fontSize:"1.2em", width:"95vw"}}>{data.incidentReason}</strong>
-            
-          <p/>
-        </div>
-        
-        <div style={{display: "flex", alignItems: "center", flexDirection: "column", justifyContent:"center"}}>
-          {data.sentences.map((_, index) => (
-              <div key={index} className="list-item" style={{border:"1px solid black", paddingLeft:"1em", width:"95vw"}}>
-                <h2 style={{marginBottom:"1vh"}}>Paragraph {index + 1}</h2>
-                <div className="paragraph" style={{width:"93vw", fontSize:"1.2em"}}>{data.paragraphs[index]}</div>
+          {/* 케이스 정보 */}
+          <div
+            className="case-container-1"
+            style={{ display: "flex", alignItems: "center", flexDirection: "column" }}
+          >
+            <h2 style={{ margin: "1em" }}>Case Information</h2>
+            <div className="court" style={{ marginBottom: "1vh", fontSize: "1.2em" }}>
+              <strong>Court: </strong> {caseData.courtName}
+            </div>
+            <div className="judge" style={{ marginBottom: "1vh", fontSize: "1.2em" }}>
+              <strong>Judge: </strong> {caseData.judgeName}
+            </div>
+            <div
+              className="decisionDate"
+              style={{ marginBottom: "1vh", fontSize: "1.2em" }}
+            >
+              <strong>Decision Date: </strong> {caseData.decisionDate}
+            </div>
+            <div className="index_no" style={{ marginBottom: "1vh", fontSize: "1.2em" }}>
+              <strong>Index No: </strong> {caseData.indexNo}
+            </div>
+            <div
+              className="slip_op_no"
+              style={{ marginBottom: "1vh", fontSize: "1.2em" }}
+            >
+              <strong>Slip Opinion No: </strong> {caseData.slipOp}
+            </div>
+            <div className="result" style={{ fontSize: "1.2em" }}>
+              <strong>Case Win: </strong> {caseData.result[0].toUpperCase()}
+              {caseData.result.slice(1).toLowerCase()}
+            </div>
+          </div>
 
+          {/* 원고 정보 */}
+          <div
+            className="case-container-2"
+            style={{ display: "flex", alignItems: "center", flexDirection: "column" }}
+          >
+            <br />
+            <h2 style={{ margin: "1em" }}>Plaintiff Information</h2>
+            <div className="plaintiff" style={{ marginBottom: "1vh", fontSize: "1.2em" }}>
+              <strong className="plaintiff">Plaintiff: </strong> {caseData.plaintiff}
+            </div>
+            {caseData.plaintiffLawyerName ? (
+              caseData.plaintiffLawyerName.map((d, index) => (
+                <div
+                  key={index}
+                  className="plaintiffLawyerName"
+                  style={{
+                    marginBottom: "1vh",
+                    paddingLeft: "20px",
+                    fontSize: "1.2em",
+                  }}
+                >
+                  <strong className="plaintiff">lawyer {index + 1}: </strong>
+                  {d}
+                </div>
+              ))
+            ) : (
+              <div style={{ marginBottom: "1vh", fontSize: "1.2em" }} />
+            )}
+
+            <br />
+            <h2 style={{ margin: "1em" }}>Defendant Information</h2>
+            <div
+              className="defendant"
+              style={{ marginBottom: "1vh", fontSize: "1.2em" }}
+            >
+              <strong className="plaintiff">Defendant: </strong> {caseData.defendant}
+            </div>
+            {caseData.defendantLawyerName ? (
+              caseData.defendantLawyerName.map((d, index) => (
+                <div
+                  key={index}
+                  className="defendantLawyerName"
+                  style={{
+                    marginBottom: "1vh",
+                    paddingLeft: "20px",
+                    fontSize: "1.2em",
+                  }}
+                >
+                  <strong className="defendant">lawyer {index + 1}: </strong>
+                  {d}
+                </div>
+              ))
+            ) : (
+              <div style={{ marginBottom: "1vh", fontSize: "1.2em" }} />
+            )}
+
+            <br />
+            <h2 style={{ margin: "1em" }}>Incident Reason</h2>
+            <strong
+              className="reason"
+              style={{ marginBottom: "1vh", fontSize: "1.2em", width: "95vw" }}
+            >
+              {caseData.incidentReason}
+            </strong>
+          </div>
+
+          {/* 문단 및 분석 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+            {caseData.sentences.map((_, index) => (
+              <div
+                key={index}
+                className="list-item"
+                style={{
+                  border: "1px solid black",
+                  paddingLeft: "1em",
+                  width: "95vw",
+                }}
+              >
+                <h2 style={{ marginBottom: "1vh" }}>Paragraph {index + 1}</h2>
+                <div
+                  className="paragraph"
+                  style={{ width: "93vw", fontSize: "1.2em" }}
+                >
+                  {caseData.paragraphs[index]}
+                </div>
                 <h3>Analysis</h3>
-                <div className="Analysis" style={{fontSize:"1.2em"}}>{data.sentences[index]}</div>
+                <div
+                  className="Analysis"
+                  style={{ fontSize: "1.2em" }}
+                >
+                  {caseData.sentences[index]}
+                </div>
               </div>
             ))}
-        </div>
+          </div>
 
-        <div style={{display: "flex", alignItems: "center", flexDirection: "column"}}>
-          <h2 >Summary</h2>
-          <strong className="summary" style={{marginBottom:"10vh", fontSize:"1.2em", width:"95vw", margin:"1em"}}>{data.summary}</strong>
+          {/* 요약 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "column",
+            }}
+          >
+            <h2>Summary</h2>
+            <strong
+              className="summary"
+              style={{
+                marginBottom: "10vh",
+                fontSize: "1.2em",
+                width: "95vw",
+                margin: "1em",
+              }}
+            >
+              {caseData.summary}
+              <br/>
+              <br/>
+            </strong>
+            {/* 구분선 추가 */}
+            <hr
+              style={{
+                width: "95vw",
+                border: "1px solid black",
+                marginTop: "1em",
+                marginBottom: "2em",
+              }}
+            />
+          </div>
         </div>
-      </header>
+      ))
+    ) : (
+      <p>No data available or data is not in the correct format.</p>
+    )}
+  </div>
+  
+  {/* Footer 추가 */}
+  <footer
+    style={{
+      paddingBottom: "1em",
+      textAlign: "center",
+      color: "#6c757d",
+      width: "100%",
+    }}
+  >
+    © {new Date().getFullYear()} Intelligent Computing and Security Laboratory (ICNS Lab), Khuynghee University. All rights reserved.
+  </footer>
+  </header>
   );
 }
 

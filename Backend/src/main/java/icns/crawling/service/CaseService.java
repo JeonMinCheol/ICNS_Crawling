@@ -32,64 +32,71 @@ public class CaseService {
         ArrayList<String> pname = new ArrayList<>(){};
         ArrayList<String> dname = new ArrayList<>(){};
 
-        CaseInformationDTO caseDTO = caseInformationRepo
-                .findByCaseNameAndDecisionDate(casename, Date.valueOf(date)).orElseThrow(Exception::new);
+        List<CaseInformationDTO> caseInfos = caseInformationRepo
+                .findByCaseNameAndDecisionDate(casename, Date.valueOf(date));
 
-        int caseId = caseDTO.get_id();
+        List<DetailedResponseDTO> responseDTOS = new ArrayList<>();
 
-        List<PlaintiffLawyerDTO> plaintiffLawyer = plaintiffLawyerRepo
-                .findAllByCaseId(caseId);
+        for(int infoIdx=0; infoIdx < caseInfos.size(); infoIdx++) {
+            CaseInformationDTO caseDTO = caseInfos.get(infoIdx);
+            int caseId = caseDTO.get_id();
 
-        List<DefendantLawyerDTO> defendantLawyer = defendantLawyerRepo
-                .findAllByCaseId(caseId);
+            List<PlaintiffLawyerDTO> plaintiffLawyer = plaintiffLawyerRepo
+                    .findAllByCaseId(caseId);
 
-        List<CaseDecisionDTO> caseDecisionDTOS = caseDecisionRepo
-                .findAllByCaseId(caseId);
+            List<DefendantLawyerDTO> defendantLawyer = defendantLawyerRepo
+                    .findAllByCaseId(caseId);
 
-        if(plaintiffLawyer.size() > 0){
-            for (int i=0; i<plaintiffLawyer.size(); i++) {
-                PlaintiffLawyerDTO plaintiffLawyerDTO = plaintiffLawyer.get(i);
-                pname.add(plaintiffLawyerDTO.getName());
+            List<CaseDecisionDTO> caseDecisionDTOS = caseDecisionRepo
+                    .findAllByCaseId(caseId);
+
+            if(plaintiffLawyer.size() > 0){
+                for (int i=0; i<plaintiffLawyer.size(); i++) {
+                    PlaintiffLawyerDTO plaintiffLawyerDTO = plaintiffLawyer.get(i);
+                    pname.add(plaintiffLawyerDTO.getName());
+                }
             }
-        }
 
-        if (defendantLawyer.size() > 0) {
-            for (int i=0; i<defendantLawyer.size(); i++) {
-                DefendantLawyerDTO defendantLawyerDTO = defendantLawyer.get(i);
-                dname.add(defendantLawyerDTO.getName());
+            if (defendantLawyer.size() > 0) {
+                for (int i=0; i<defendantLawyer.size(); i++) {
+                    DefendantLawyerDTO defendantLawyerDTO = defendantLawyer.get(i);
+                    dname.add(defendantLawyerDTO.getName());
+                }
             }
+
+            List<String> sentences = new ArrayList<>();
+            List<String> paragraphs = new ArrayList<>();
+
+            for(int i=0; i < caseDecisionDTOS.size(); i++) {
+                sentences.add(caseDecisionDTOS.get(i).getSentence().trim());
+                paragraphs.add(caseDecisionDTOS.get(i).getParagraph().trim());
+            }
+
+            DetailedResponseDTO detailedDTO = DetailedResponseDTO.builder()
+                    .caseName(caseDTO.getCaseName())
+                    .courtName(caseDTO.getCourtName())
+                    .indexNo(caseDTO.getIndexNo())
+                    .plaintiff(caseDTO.getPlaintiff())
+                    .defendant(caseDTO.getDefendant())
+                    .incidentReason(caseDTO.getIncidentReason())
+                    .slipOp(caseDTO.getSlipOp())
+                    .summary(caseDTO.getSummary())
+                    .plaintiffLawyerName(pname)
+                    .defendantLawyerName(dname)
+                    .plaintiffLawyerNum(pname.size())
+                    .defendantLawyerNum(dname.size())
+                    .sentences(sentences)
+                    .paragraphs(paragraphs)
+                    .decisionDate(caseDTO.getDecisionDate())
+                    .caseKind(caseDTO.getCaseKind())
+                    .judgeName(caseDTO.getJudgeName())
+                    .result(caseDTO.getResult())
+                    .build();
+
+            responseDTOS.add(detailedDTO);
         }
 
-        List<String> sentences = new ArrayList<>();
-        List<String> paragraphs = new ArrayList<>();
-
-        for(int i=0; i < caseDecisionDTOS.size(); i++) {
-            sentences.add(caseDecisionDTOS.get(i).getSentence().trim());
-            paragraphs.add(caseDecisionDTOS.get(i).getParagraph().trim());
-        }
-
-        DetailedResponseDTO detailedDTO = DetailedResponseDTO.builder()
-                .caseName(caseDTO.getCaseName())
-                .courtName(caseDTO.getCourtName())
-                .indexNo(caseDTO.getIndexNo())
-                .plaintiff(caseDTO.getPlaintiff())
-                .defendant(caseDTO.getDefendant())
-                .incidentReason(caseDTO.getIncidentReason())
-                .slipOp(caseDTO.getSlipOp())
-                .summary(caseDTO.getSummary())
-                .plaintiffLawyerName(pname)
-                .defendantLawyerName(dname)
-                .plaintiffLawyerNum(pname.size())
-                .defendantLawyerNum(dname.size())
-                .sentences(sentences)
-                .paragraphs(paragraphs)
-                .decisionDate(caseDTO.getDecisionDate())
-                .caseKind(caseDTO.getCaseKind())
-                .judgeName(caseDTO.getJudgeName())
-                .result(caseDTO.getResult())
-                .build();
-
-        return new ResponseEntity<DetailedResponseDTO>(detailedDTO, HttpStatus.OK);
+        return new ResponseEntity<List<DetailedResponseDTO>>(responseDTOS, HttpStatus.OK);
     }
 
     public ResponseEntity<?> responseCaseSimpleInfo(String lawyer) throws Exception {

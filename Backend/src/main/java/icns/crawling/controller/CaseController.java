@@ -43,7 +43,6 @@ public class CaseController {
     @GetMapping(value = "/search/lawyer")
     public ResponseEntity<?> searchByLawyer(@RequestParam(value = "lawyer") String lawyer, @RequestParam(value="page") String page) throws IOException {
         try{
-            log.info("lawyer", lawyer);
             return caseService.lawyerSearchResponse(lawyer, page);
         } catch (Exception e) {
             log.info(e.getMessage());

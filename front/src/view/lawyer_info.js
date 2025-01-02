@@ -48,39 +48,37 @@ function Laywer_Info() {
 
   // 에러가 발생한 경우 표시할 컴포넌트
   else if (error) return <p>Error: {error}</p>;
-  console.log(data)
+
   return (
       <header className="App-header">
         <button onClick={() => navigate(-1)}>Back to Result</button>
-        
-        <h2>{data.name}</h2>
-        <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Lawfirm</h3>
-        
-        <div style={{paddingLeft:"2em"}}>● {data.lawfirm}</div>
-        <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Record</h3>
+          <h2>{data.name}</h2>
+          <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Lawfirm</h3>
+          
+          <div style={{paddingLeft:"2em"}}>● {data.lawfirm}</div>
+          <h3 style={{paddingLeft:"1em", margin:0, marginTop:"1em"}}>Record</h3>
 
-        <div className="info-container" >
-          <div className="win-lose">
-            <div style={{paddingLeft:"2em"}}>● Win: {data.win}</div>
-            <div style={{paddingLeft:"2em"}}>● Lose: {data.lose}</div>
-          </div>
-        </div>
-
-        <br/>
-        <strong className="number_of_case" style={{margin: "1em"}}>
-          Total case : {data.count}
-        </strong>
-
-        <div className="list-container">
-          {data.caseName.map((_, index) => (
-            <div key={index} className="list-item">
-              <h3 onClick={() =>navigate("/case/" + data.caseName[index] +"/date/"+ data.date[index])}>{data.caseName[index]}</h3>
-              <div><strong>Date:</strong> {data.date[index]}</div>
-              <div><strong>Index No:</strong> {data.indexNo[index]}</div>
+          <div className="info-container" >
+            <div className="win-lose">
+              <div style={{paddingLeft:"2em"}}>● Win: {data.win}</div>
+              <div style={{paddingLeft:"2em"}}>● Lose: {data.lose}</div>
             </div>
-          ))}
-        </div>
+          </div>
 
+          <br/>
+          <strong className="number_of_case" style={{margin: "1em"}}>
+            Total case : {data.count}
+          </strong>
+
+          <div className="list-container">
+            {data.caseName.map((_, idx) => (
+              <div key={idx} className="list-item">
+                <h3 onClick={() =>navigate("/case/" + data.caseName[idx] +"/date/"+ data.date[idx])}>{data.caseName[idx]}</h3>
+                <div><strong>Date:</strong> {data.date[idx]}</div>
+                <div><strong>Index No:</strong> {data.indexNo[idx]}</div>
+              </div>
+            ))}
+          </div>
       </header>
   );
 }

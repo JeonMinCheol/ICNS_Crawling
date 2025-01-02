@@ -11,8 +11,8 @@ import java.util.Optional;
 
 
 public interface CaseInformationRepo extends JpaRepository<CaseInformationDTO, Integer> {
-    @Query(value = "SELECT * FROM CASE_INFO WHERE CASE_NAME = :caseName AND DECISION_DATE = :date Limit 1;", nativeQuery = true)
-    Optional<CaseInformationDTO> findByCaseNameAndDecisionDate(@Param("caseName") String caseName, @Param("date") Date date);
+    @Query(value = "SELECT * FROM CASE_INFO WHERE CASE_NAME LIKE CONCAT('%', :caseName, '%') AND DECISION_DATE = :date;", nativeQuery = true)
+    List<CaseInformationDTO> findByCaseNameAndDecisionDate(@Param("caseName") String caseName, @Param("date") Date date);
     @Query(value = "WITH FilteredRemedies AS ( \n" +
             "                            SELECT *, \n" +
             "                            ROW_NUMBER() OVER (PARTITION BY INDEX_NO ORDER BY CASE_ID) AS row_num \n" +
@@ -39,8 +39,8 @@ public interface CaseInformationRepo extends JpaRepository<CaseInformationDTO, I
 
     @Query(value = "WITH FilteredRemedies AS ( \n" +
             "                            SELECT *, \n" +
-            "                                ROW_NUMBER() OVER (PARTITION BY INDEX_NO ORDER BY CASE_ID) AS row_num AND DECISION_DATE > '1998-12-31' \n" +
-            "                            FROM CASE_INFO \n" +
+            "                                ROW_NUMBER() OVER (PARTITION BY INDEX_NO ORDER BY CASE_ID) AS row_num \n" +
+            "                            FROM CASE_INFO WHERE DECISION_DATE > '1998-12-31' \n" +
             "                        ), \n" +
             "                        FirstPerCase AS ( \n" +
             "                            SELECT * \n" +
