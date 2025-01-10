@@ -7,7 +7,6 @@ import baseUrl from "../svc/baseUrl.js";
 
 const lawyerSearchUrl = baseUrl + '/api/search/lawyer?lawyer=';
 const indexSearchUrl = baseUrl + '/api/search/index?indexNo=';
-const keywordSearchUrl = baseUrl + '/api/search/keyword?keyword=';
 const countSearchUrl = baseUrl + '/api/count';
 
 function urlBuild(base, param1, page) {
@@ -17,12 +16,10 @@ function urlBuild(base, param1, page) {
   return base + param1
 }
 
-// http://localhost:8090/api/search/lawyer?lawyer=null&page=1
 const fetchData = async (searchUrl, name = null, setLoading = null, setData = null, nullData = null, setError = null, page = null) => {
   try {
     // API 호출
     const response = await axiosInstance.get(urlBuild(searchUrl, name, page)).then(response => {
-      console.log(response)
       return response
     })
     .catch(error => {
@@ -65,7 +62,7 @@ function LawyerSearchBar(param) {
     <button onClick={() => {
       param.setLoading(true)
       param.setPage(1)
-      param.setUrl(lawyerSearchUrl)
+      param.setUrl(lawyerSearchUrl + searchTerm)
       fetchData(lawyerSearchUrl, searchTerm, param.setLoading, param.setData, param.nullData, null, 1); 
       fetchData(countSearchUrl+"/lawyer?lawyer=", searchTerm, null, param.setData2);
       }}>search</button>
@@ -92,7 +89,7 @@ function IndexSearchBar(param) {
         <button onClick={() => {
           param.setLoading(true)
           param.setPage(1)
-          param.setUrl(indexSearchUrl)
+          param.setUrl(indexSearchUrl + searchTerm)
           fetchData(indexSearchUrl, searchTerm, param.setLoading, param.setData, param.nullData, null, 1); 
           fetchData(countSearchUrl + "/indexNo?indexNo=", searchTerm, null, param.setData2);
       }}>search</button>
@@ -110,7 +107,10 @@ function Search() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalcases, setTotalcases] = useState(0);
   const [url, setUrl] = useState(lawyerSearchUrl);
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   const navigate = useNavigate();
   let i = 1;
@@ -127,9 +127,9 @@ function Search() {
   return (
     <>
       <div style={{display:"flex", justifyContent:"center", margin:"1vh 0"}}>
-        <LawyerSearchBar data={lawyerData} setPage={setCurrentPage} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setIndexData}/>
+        <LawyerSearchBar searchTerm={searchTerm} handleSearchChange={handleSearchChange} data={lawyerData} setPage={setCurrentPage} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setIndexData}/>
         <div style={{width:"1vw"}}/>
-        <IndexSearchBar data={indexData} setPage={setCurrentPage} setData={setIndexData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setLawyerData}/>
+        <IndexSearchBar searchTerm={searchTerm} handleSearchChange={handleSearchChange} data={indexData} setPage={setCurrentPage} setData={setIndexData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setLawyerData}/>
         <div style={{width:"1vw"}}/>
       </div>
 
@@ -181,7 +181,6 @@ function Search() {
           </div>
         </header> : null
       }
-      
       <PaginationComponent
         currentPage={currentPage}
         totalPages={totalcases / 50}
@@ -189,14 +188,15 @@ function Search() {
         fetchData = {fetchData}
         setData = {
           (data) => {
-            console.log(data)
-            if(url === lawyerSearchUrl)
+            if(url.slice(0, url.indexOf("=") + 1) === lawyerSearchUrl)
               setLawyerData(data)
-            else if(url === indexSearchUrl)
+            else if(url.slice(0, url.indexOf("=") + 1) === indexSearchUrl){
               setIndexData(data)
+            }
           }
         }
         SearchUrl = {url}
+        name={url.slice(0, url.indexOf("=") + 1) === lawyerSearchUrl  ? searchTerm : ''}
       />   
     </>
   );

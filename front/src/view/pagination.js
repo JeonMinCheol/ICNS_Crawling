@@ -13,7 +13,7 @@ const PaginationComponent = ({ currentPage, totalPages, onPageChange, fetchData,
   };
 
   const pageNumbers = createRangeArray(startPage, endPage);
-
+  
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
