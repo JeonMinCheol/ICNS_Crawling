@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "CASE_DECISION")
+@Table(name = "case_decision")
 public class CaseDecisionDTO {
     @Id
     @Column(name = "_id")

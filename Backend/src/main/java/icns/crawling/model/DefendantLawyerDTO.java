@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "DEFENDANT_LAWYER")
+@Table(name = "defendant_lawyer")
 public class DefendantLawyerDTO {
     @Id
     @Column(name = "_id")

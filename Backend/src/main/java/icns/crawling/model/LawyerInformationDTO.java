@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "LAWYER_INFO")
+@Table(name = "lawyer_info")
 public class LawyerInformationDTO {
     @Id
     @Column(name = "_id")

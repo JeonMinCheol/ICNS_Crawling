@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "user")
+@Table(name = "USER")
 public class MemberDTO implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

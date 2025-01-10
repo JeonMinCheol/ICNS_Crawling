@@ -164,7 +164,7 @@ public class CaseService {
 
         // 검색어가 없는 경우
         if(lawyer.equals("null")) {
-            for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchAll(pageSize * Integer.parseInt(page))) {
+            for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchAll(pageSize * (Integer.parseInt(page) - 1))) {
                 SearchResponseDTO searchResponseDTO = SearchResponseDTO
                         .builder()
                         .name(lawyerInformationDTO.getName())
@@ -181,7 +181,7 @@ public class CaseService {
         }
 
         // 검색어가 있는 경우
-        for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchLawyerByName(lawyer, pageSize * Integer.parseInt(page))) {
+        for (LawyerInformationDTO lawyerInformationDTO : lawyerInformationRepo.searchLawyerByName(lawyer, pageSize * (Integer.parseInt(page) - 1))) {
             if (lawyerInformationDTO.getName().equals("Unknown"))
                 continue;
 

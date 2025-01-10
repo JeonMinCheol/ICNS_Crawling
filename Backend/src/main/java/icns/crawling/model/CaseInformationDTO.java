@@ -11,7 +11,7 @@ import java.sql.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "CASE_INFO")
+@Table(name = "case_info")
 public class CaseInformationDTO {
     @Id
     @Column(name = "CASE_ID")
