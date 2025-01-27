@@ -1,0 +1,26 @@
+.landing_page {
+    width: 100%;
+    height: 100vh;
+    background-image: url("../media/justiceben\ korea.svg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.landing_button {
+    width:fit-content;
+    height:fit-content;
+    background-color: black;
+    color:#f0f8ff;
+    font:larger;
+    font-size:small
+}
+
+.landing_button:hover {
+    width:fit-content;
+    height:fit-content;
+    background-color: black;
+    color:aliceblue
+}
