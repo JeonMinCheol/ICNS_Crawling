@@ -1,5 +1,4 @@
 import requests
-from bs4 import BeautifulSoup
 import time
 class Request:
   def __init__(self):

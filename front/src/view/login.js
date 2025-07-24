@@ -17,10 +17,10 @@ const Login = () => {
                 password
             });
             
-            // 서버에서 JWT 토큰을 반환하면, 로컬 스토리지에 저장합니다.
+            // 서버에서 JWT 토큰을 반환하면, 로컬 스토리지에 저장.
             localStorage.setItem('token', response.data.access_token);
 
-            // 성공적으로 로그인하면 다른 페이지로 리디렉션할 수 있습니다.
+            // 성공적으로 로그인하면 다른 페이지로 리디렉션.
             window.location.href = '/search';
         } catch (error) {
             setError('Invalid email or password');
@@ -28,31 +28,30 @@ const Login = () => {
     };
     
     return (
-
-    <div className="login-container">
-        <form onSubmit={handleSubmit}>
-            <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <label htmlFor="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-            </div>
-            {error && <div className="error-message">{error}</div>}
-            <button type="submit">Login</button>
-        </form>
-    </div>
+        <div className="login-container">
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
+                {error && <div className="error-message">{error}</div>}
+                <button type="submit">Login</button>
+            </form>
+        </div>
     );
 };
 

@@ -1,6 +1,5 @@
 from datetime import datetime
 import nltk
-import time
 from nltk.data import load
 nltk.download('punkt')
 

@@ -28,10 +28,15 @@ public class CaseService {
     private final CaseDecisionRepo caseDecisionRepo;
     private final LawyerInformationRepo lawyerInformationRepo;
 
+    /**
+     * 상세 사건 정보 조회
+     * 사건 이름과 날짜를 기준으로 사건 관련 정보 및 판결문, 변호인 정보 등을 반환
+     */
     public ResponseEntity<?> responseCaseDetailedInfo(String casename, String date) throws Exception {
         ArrayList<String> pname = new ArrayList<>(){};
         ArrayList<String> dname = new ArrayList<>(){};
 
+        // 사건 이름과 판결일로 사건 정보 검색
         List<CaseInformationDTO> caseInfos = caseInformationRepo
                 .findByCaseNameAndDecisionDate(casename, Date.valueOf(date));
 
@@ -41,6 +46,7 @@ public class CaseService {
             CaseInformationDTO caseDTO = caseInfos.get(infoIdx);
             int caseId = caseDTO.get_id();
 
+            // 원고/피고 변호사, 판결문 정보 조회
             List<PlaintiffLawyerDTO> plaintiffLawyer = plaintiffLawyerRepo
                     .findAllByCaseId(caseId);
 
@@ -50,6 +56,7 @@ public class CaseService {
             List<CaseDecisionDTO> caseDecisionDTOS = caseDecisionRepo
                     .findAllByCaseId(caseId);
 
+            // 변호사 이름 수집
             if(plaintiffLawyer.size() > 0){
                 for (int i=0; i<plaintiffLawyer.size(); i++) {
                     PlaintiffLawyerDTO plaintiffLawyerDTO = plaintiffLawyer.get(i);
@@ -57,6 +64,7 @@ public class CaseService {
                 }
             }
 
+            // 변호사 이름 수집
             if (defendantLawyer.size() > 0) {
                 for (int i=0; i<defendantLawyer.size(); i++) {
                     DefendantLawyerDTO defendantLawyerDTO = defendantLawyer.get(i);
@@ -67,11 +75,13 @@ public class CaseService {
             List<String> sentences = new ArrayList<>();
             List<String> paragraphs = new ArrayList<>();
 
+            // 판결문 정보 수집
             for(int i=0; i < caseDecisionDTOS.size(); i++) {
                 sentences.add(caseDecisionDTOS.get(i).getSentence().trim());
                 paragraphs.add(caseDecisionDTOS.get(i).getParagraph().trim());
             }
 
+            // 상세 정보 DTO 구성
             DetailedResponseDTO detailedDTO = DetailedResponseDTO.builder()
                     .caseName(caseDTO.getCaseName())
                     .courtName(caseDTO.getCourtName())
@@ -99,6 +109,10 @@ public class CaseService {
         return new ResponseEntity<List<DetailedResponseDTO>>(responseDTOS, HttpStatus.OK);
     }
 
+    /**
+     * 특정 변호사에 대한 간단 요약 정보 제공
+     * 소속 로펌, 승소/패소 수, 처리 사건 목록 등 포함
+     */
     public ResponseEntity<?> responseCaseSimpleInfo(String lawyer) throws Exception {
         LawyerInformationDTO lawyerDTO = lawyerInformationRepo
                 .findByName(lawyer).orElseThrow(Exception::new);
@@ -109,6 +123,7 @@ public class CaseService {
         int caseWin = lawyerDTO.getWin();
         String lawfirm = lawyerDTO.getLawfirm();
 
+        // 변호사 참여 사건 ID 수집
         List<PlaintiffLawyerDTO> allByLawyerNo = plaintiffLawyerRepo.findAllByLawyerNo(lawyerNo);
         List<DefendantLawyerDTO> allByLawyerNo1 = defendantLawyerRepo.findAllByLawyerNo(lawyerNo);
 
@@ -118,6 +133,7 @@ public class CaseService {
             if (i < allByLawyerNo1.size()) caseIds.add(allByLawyerNo1.get(i).getCaseId());
         }
 
+        // 사건 정보 조회
         List<CaseInformationDTO> c = caseInformationRepo.findAllById(caseIds);
         List<String> caseNames = new ArrayList<>();
         List<String> indexNos = new ArrayList<>();
@@ -141,6 +157,7 @@ public class CaseService {
             courtNames.add(info.getCourtName());
         }
 
+        // 응답 DTO 구성
         SimpleResponseDTO simpleResponseDTO = SimpleResponseDTO
                 .builder()
                 .name(lawyer)
@@ -156,11 +173,16 @@ public class CaseService {
         return new ResponseEntity<SimpleResponseDTO>(simpleResponseDTO, HttpStatus.OK);
     }
 
+    /**
+     * 변호사 이름 기반 검색 결과 반환 (페이지네이션 지원)
+     */
     public ResponseEntity<?> lawyerSearchResponse(String lawyer, String page) throws Exception {
         List<SearchResponseDTO> SearchResponseDTOList = new ArrayList<>();
 
         log.info(String.valueOf(lawyer.equals("null")));
         int pageSize = 50;
+
+        // 전체 변호사 조회
 
         // 검색어가 없는 경우
         if(lawyer.equals("null")) {
@@ -201,6 +223,9 @@ public class CaseService {
         return new ResponseEntity<List<SearchResponseDTO>>(SearchResponseDTOList, HttpStatus.OK);
     }
 
+    /**
+     * 사건번호 기반 검색 결과 반환 (페이지네이션 지원)
+     */
     public ResponseEntity<?> indexSearchResponse(String indexNo, String page) throws Exception {
         // 검색어가 없는 경우
         if(indexNo.equals("null")) {
@@ -216,6 +241,9 @@ public class CaseService {
         return new ResponseEntity<List<CaseInformationDTO>>(caseInformationDTOList, HttpStatus.OK);
     }
 
+    /**
+     * 변호사 수 카운트 반환 (검색어에 따라 전체 또는 부분 집계)
+     */
     public ResponseEntity<?> lawyerCounting(String lawyer) {
         long count = 0;
         if (lawyer.equals("null")) count = lawyerInformationRepo.countAll();
@@ -223,6 +251,9 @@ public class CaseService {
         return new ResponseEntity<Long>(count, HttpStatus.OK);
     }
 
+    /**
+     * 사건번호 수 카운트 반환 (검색어에 따라 전체 또는 부분 집계)
+     */
     public ResponseEntity<?> indexNoCounting(String indexNo) {
         long count = 0;
         if (indexNo.equals("null")) count = caseInformationRepo.countAll();

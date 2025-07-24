@@ -5,10 +5,14 @@ import PaginationComponent from './pagination.js';
 import axiosInstance from '../svc/axiosInstance.js';
 import baseUrl from "../svc/baseUrl.js";
 
+// 변호사명/사건번호를 기반으로 검색 기능과 결과 렌더링을 담당
+
+// 검색용 URL 상수 정의
 const lawyerSearchUrl = baseUrl + '/api/search/lawyer?lawyer=';
 const indexSearchUrl = baseUrl + '/api/search/index?indexNo=';
 const countSearchUrl = baseUrl + '/api/count';
 
+// 페이지 정보 포함된 URL 생성 함수
 function urlBuild(base, param1, page) {
   if(page != null)
     return base + param1 + "&page=" + page
@@ -16,6 +20,7 @@ function urlBuild(base, param1, page) {
   return base + param1
 }
 
+// API 데이터 fetch 함수 (공통 사용)
 const fetchData = async (searchUrl, name = null, setLoading = null, setData = null, nullData = null, setError = null, page = null) => {
   try {
     // API 호출
@@ -43,6 +48,7 @@ const fetchData = async (searchUrl, name = null, setLoading = null, setData = nu
   }
 };
 
+// 변호사명 검색 컴포넌트
 function LawyerSearchBar(param) {
   const [searchTerm, setSearchTerm] = useState('');
   const handleSearchChange = (event) => {
@@ -71,6 +77,7 @@ function LawyerSearchBar(param) {
   )
 }
 
+// 사건번호 검색 컴포넌트
 function IndexSearchBar(param) {
   const [searchTerm, setSearchTerm] = useState('');
   const handleSearchChange = (event) => {
@@ -98,7 +105,7 @@ function IndexSearchBar(param) {
   )
 }
 
-
+// 메인 검색 컴포넌트
 function Search() {
   const [lawyerData, setLawyerData] = useState(null);
   const [indexData, setIndexData] = useState(null);
@@ -115,7 +122,7 @@ function Search() {
   const navigate = useNavigate();
   let i = 1;
 
-  // 컴포넌트가 마운트될 때 실행되는 useEffect
+  // 컴포넌트 마운트 시 초기 데이터 로딩
   useEffect(() => {
     fetchData(lawyerSearchUrl, "", setLoading, setLawyerData, setIndexData, setError, currentPage);
     fetchData(countSearchUrl+"/lawyer?lawyer=", null, null, setTotalcases)
@@ -126,6 +133,7 @@ function Search() {
 
   return (
     <>
+      {/* 검색창 영역 */}
       <div style={{display:"flex", justifyContent:"center", margin:"1vh 0"}}>
         <LawyerSearchBar searchTerm={searchTerm} handleSearchChange={handleSearchChange} data={lawyerData} setPage={setCurrentPage} setData={setLawyerData} setData2={setTotalcases} setUrl = {setUrl} setLoading = {setLoading} nullData = {setIndexData}/>
         <div style={{width:"1vw"}}/>
@@ -133,9 +141,8 @@ function Search() {
         <div style={{width:"1vw"}}/>
       </div>
 
-      {
-      
-      lawyerData != null ? <div className="scroll-container">
+      {/* 변호사 검색 결과 테이블 */}
+      {lawyerData != null ? <div className="scroll-container">
         <table>
           <thead>
             <tr>
@@ -164,6 +171,7 @@ function Search() {
       </table>
       </div> : null}
       
+      {/* 사건번호 검색 결과 카드 */}
       {lawyerData == null && indexData != null && indexData.length > 0 ? 
         <header className="App-header">
           <br/>
@@ -181,9 +189,11 @@ function Search() {
           </div>
         </header> : null
       }
+
+      {/* 페이지네이션 컴포넌트 */}
       <PaginationComponent
         currentPage={currentPage}
-        totalPages={totalcases / 50}
+        totalPages={totalcases / 50} // 한 페이지당 50건
         onPageChange={setCurrentPage}
         fetchData = {fetchData}
         setData = {

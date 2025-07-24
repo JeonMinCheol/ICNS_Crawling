@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: "crawling"
+  datasource:
+    url: jdbc:mysql://host_ip:host_port/database_name # 서버 빌드 전 필수로 변경
+    username: username # 서버 빌드 전 필수로 변경
+    password: password # 서버 빌드 전 필수로 변경
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+application:
+  security:
+    jwt:
+      secret-key: "SECRET_KEY" # 서버 빌드 전 필수로 변경
+      expiration: 604800000
+      refresh-token:
+        expiration: 604800000

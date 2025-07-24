@@ -1,3 +1,4 @@
+# 소송 사례 데이터와 관련된 정보를 구성하고, DB 쿼리를 동적으로 생성·실행
 class CaseInfoBuilder:
     def __init__(self):
         self.CASE_NAME = "Unknown"
@@ -16,6 +17,7 @@ class CaseInfoBuilder:
         self.LAWYER_PARAGRAPH = ""
         self.KEYWORD_PARAGRAPH = ""
     
+    # 객체를 문자열로 출력할 때의 형식
     def __str__(self):
         info = f"""
             case name : {self.CASE_NAME},
@@ -36,6 +38,7 @@ class CaseInfoBuilder:
 
         return info
 
+    # 모든 정보 초기화
     def clear(self):
         self.CASE_NAME = "Unknown"
         self.COURT_NAME = "Unknown"
@@ -52,10 +55,12 @@ class CaseInfoBuilder:
         self.LAWYER_LAWFIRM = {} # LAWYER_NAME: [LAWFIRM, LOCATION]
         self.KEYWORDS = {} # KEYWORD: [PARAGRAPHS, ..]
 
+    # 변호사 수 설정
     def setLawyerNo(self, p_no, d_no):
         self.PLAINTIFF_LAWYER_NO = p_no
         self.DEFENDANT_LAWYER_NO = d_no
 
+    # 키워드에 해당 문단 추가
     def addKeyword(self, keyword, para):
         keyword_paragraphs = self.KEYWORDS.get(keyword)
         if keyword_paragraphs is None:
@@ -63,7 +68,7 @@ class CaseInfoBuilder:
         else:
             keyword_paragraphs.append(para)
             self.KEYWORDS[keyword] = keyword_paragraphs
-
+    # 변호사 관련 정보 추가
     def addLawyer(self, lawyer, customer, relationship, lawfirm, loc):
         customer_relationship = self.LAWYER_INFO.get(lawyer)
         if customer_relationship is None:
@@ -79,14 +84,15 @@ class CaseInfoBuilder:
 class QueryBuilder:
     def __init__(self, CURSOR):
         self.CURSOR = CURSOR
-        pass
-    
+
+    # 사건명과 사건번호(INDEX_NO)로 사건 ID 조회    
     def findCaseIdQuery(self, table, case_name, docket_no):
         CASE_ID_QUERY = f"SELECT _id FROM {table} WHERE CASE_NAME = '{case_name}' AND INDEX_NO = '{docket_no}'"
         self.CURSOR.execute(CASE_ID_QUERY)
         CASE_ID = self.CURSOR.fetchone()[0]
         return CASE_ID
 
+    # 변호사 정보 존재 여부 확인 후, 없다면 INSERT
     def insertQuery(self, table, name):
         LAWYER_INFORMATION_SELECT_QUERY = f"SELECT WIN, LOSE FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
         LAWYER_INFORMATION_INSERT_QUERY = f'INSERT INTO {table}(NAME, WIN, LOSE, DRAW, COUNT, CASE_WIN, CASE_LOSE, CASE_DRAW) VALUES("{name}", {0}, {0}, {0}, {0}, {0}, {0}, {0})'
@@ -96,6 +102,7 @@ class QueryBuilder:
             self.CURSOR.execute(LAWYER_INFORMATION_INSERT_QUERY)
             print(LAWYER_INFORMATION_INSERT_QUERY)
 
+    # 변호사 번호 조회 후, 사건 변호사 관계 테이블에 INSERT
     def insertQuery2(self, CASE_ID, table, name, win, lose, draw):
         LAWYER_NO_QUERY = f"SELECT _id FROM LAWYER_INFORMATION WHERE NAME = '{name}'"
         self.CURSOR.execute(LAWYER_NO_QUERY)
@@ -105,6 +112,7 @@ class QueryBuilder:
         LAWYER_INSERT_QUERY = f'INSERT INTO {table}(CASE_ID, LAWYER_NO, NAME, WIN, LOSE, DRAW) VALUES("{CASE_ID}", "{LAWYER_NO}", "{name}", "{win}", "{lose}", "{draw}")'
         self.CURSOR.execute(LAWYER_INSERT_QUERY)
 
+    # 변호사의 소송 결과 반영하여 정보 업데이트
     def updateQuery(self, lawyer_type, table, name, plaintiff_win, plaintiff_lose, defendant_win, defendant_lose, draw):
         if lawyer_type == "plaintiff":
             # CASE: WIN
@@ -142,7 +150,8 @@ class QueryBuilder:
                 LAWYER_INFORMATION_UPDATE_QUERY = f"UPDATE {table} SET COUNT = COUNT + 1, WIN = WIN + {defendant_win}, LOSE = LOSE + {defendant_lose}, DRAW = DRAW + {draw}, CASE_DRAW = CASE_DRAW + 1 WHERE NAME = '{name}'"
                 self.CURSOR.execute(LAWYER_INFORMATION_UPDATE_QUERY)
                 print(LAWYER_INFORMATION_UPDATE_QUERY)
-    
+
+    # 사건 ID와 키워드를 DECISION_KEYWORD 테이블에 삽입
     def insertDecisonKeyword(self, CASE_ID, keyword):
         DECISION_KEYWORD_INSERT_QUERY = f'INSERT INTO DECISION_KEYWORD(CASE_ID, KEYWORD, PARAGRAPH) VALUES("{CASE_ID}", "{keyword[1]}", "{keyword[0]}")'
         self.CURSOR.execute(DECISION_KEYWORD_INSERT_QUERY)

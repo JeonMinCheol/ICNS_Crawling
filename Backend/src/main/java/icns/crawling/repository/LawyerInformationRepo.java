@@ -8,15 +8,45 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+// 변호사 정보(lawyer_info)를 관리하는 JPA 리포지토리
 public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDTO, Integer> {
+    /**
+    * 이름이 정확히 일치하는 변호사를 조회
+    *
+    * @param lawyer 변호사 이름 (정확 일치)
+    * @return 해당 이름을 가진 변호사 정보 (없으면 Optional.empty)
+    */
     Optional<LawyerInformationDTO> findByName(String lawyer);
 
+    /**
+     * 변호사 이름이 특정 접두어로 시작하는 변호사들을 조회
+     * count(처리건수) 내림차순 → win(승소건수) 내림차순 정렬
+     * 최대 50명 반환, offset 기반 페이징
+     *
+     * @param lawyer 검색할 변호사 이름 접두어
+     * @param page   OFFSET으로 사용할 값 (페이지 번호 × 50)
+     * @return 검색 결과 리스트
+     */
     @Query(value ="SELECT * from lawyer_info where LAWYER_NAME like concat(:lawyer, '%') ORDER BY COUNT DESC, WIN DESC LIMIT 50 OFFSET :page;" , nativeQuery = true)
     List<LawyerInformationDTO> searchLawyerByName(@Param("lawyer") String lawyer, @Param("page") int page);
 
+    /**
+     * 변호사 이름에 특정 키워드가 포함된 변호사의 총 수를 반환
+     *
+     * @param lawyer 검색 키워드
+     * @return 변호사 수
+     */
     @Query(value ="select count(*) from lawyer_info where LAWYER_NAME like concat('%', :lawyer, '%');", nativeQuery = true)
     long count(@Param("lawyer") String lawyer);
 
+    /**
+     * 전체 변호사 목록 조회 (이름이 'None'인 항목 제외)
+     * 사건(case_info)에 연결된 변호사만 조회
+     * count, win 기준 내림차순 정렬, 페이징 지원
+     *
+     * @param page OFFSET 값 (페이지 번호 × 50)
+     * @return 검색 결과 리스트
+     */
     @Query(value = "WITH RelevantCases AS (\n" +
             "    SELECT CASE_ID\n" +
             "    FROM case_info \n" +
@@ -44,6 +74,12 @@ public interface LawyerInformationRepo extends JpaRepository<LawyerInformationDT
             "LIMIT 50 OFFSET :page;\n", nativeQuery = true)
     List<LawyerInformationDTO> searchAll(@Param("page") int page);
 
+    /**
+     * 전체 변호사 수를 계산
+     * 조건: 이름이 'None'이 아니고, 1999년 이후 사건에 참여한 적이 있어야 함
+     *
+     * @return 조건을 만족하는 변호사 수
+     */
     @Query(value = "WITH RelevantCases AS (\n" +
             "    SELECT CASE_ID\n" +
             "    FROM case_info\n" +
